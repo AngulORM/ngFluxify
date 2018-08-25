@@ -1,0 +1,18 @@
+{
+  "name": "angular-rest",
+  "version": "0.0.1",
+  "peerDependencies": {
+    "@angular/common": "^6.0.0-rc.0 || ^6.0.0",
+    "@angular/core": "^6.0.0-rc.0 || ^6.0.0"
+  },
+  "dependencies": {
+    "@angular-redux/form": "^9.0.1",
+    "@angular-redux/router": "^9.0.0",
+    "@angular-redux/store": "^9.0.0",
+    "crypto-js": "^3.1.9-1",
+    "moment": "^2.22.2",
+    "moment-timezone": "^0.5.21",
+    "redux": "^4.0.0",
+    "redux-observable": "^1.0.0"
+  }
+}
