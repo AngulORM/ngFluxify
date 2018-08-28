@@ -8,7 +8,7 @@ import {Observable} from 'rxjs/internal/Observable';
 import {Observer} from 'rxjs/internal/types';
 import {Subscription} from 'rxjs/internal/Subscription';
 import {Comparateurs} from './comparateurs.enum';
-import {AbstractEntity} from '../entities/abstract.entity';
+import {AbstractEntity} from '../entities';
 import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ApiResponse} from './api-response';
