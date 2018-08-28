@@ -1,3 +1,3 @@
-import { RestEntity } from './api/rest-entity';
+import {EntityDescriptor} from "./api/entity.descriptor";
 
-export let entities: RestEntity[] = [];
+export let entities: EntityDescriptor[] = [];
