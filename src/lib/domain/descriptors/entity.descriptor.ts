@@ -1,5 +1,5 @@
 export class EntityDescriptor {
-    class: any;
+  class?: any;
     name: string;
 
     constructor(_name: string) {
