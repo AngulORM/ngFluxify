@@ -2,7 +2,7 @@ import {combineReducers, ReducersMapObject} from 'redux';
 import {RestReducer} from './rest/rest.reducer';
 import {entitiesList} from '../domain/entities.list';
 import {EntityManager} from '../domain/api/entity-manager';
-import {EntityDescriptor} from "../domain/descriptors/entity.descriptor";
+import {EntityDescriptor} from "../domain/descriptors";
 
 export interface IAppState {
     [key: string]: any;

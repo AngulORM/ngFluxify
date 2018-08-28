@@ -1,3 +1,3 @@
-import {EntityDescriptor} from "./descriptors/entity.descriptor";
+import {EntityDescriptor} from "./descriptors";
 
 export let entitiesList: EntityDescriptor[] = [];

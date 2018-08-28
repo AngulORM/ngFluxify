@@ -7,7 +7,7 @@ import * as moment from 'moment-timezone';
 import {Observable} from 'rxjs/internal/Observable';
 import {ApiRequest} from '../domain/api/api-request';
 import {UrlParserHelper} from '../domain/helpers/url-parser.helper';
-import {ApiResponse} from '../domain/api/api-reponse';
+import {ApiResponse} from '../domain/api/api-response';
 import {entitiesList} from '../domain/entities.list';
 import {BaseActionsManager} from '../stores/base.action';
 import {EntityManager} from '../domain/api/entity-manager';

@@ -11,7 +11,7 @@ import {Comparateurs} from './comparateurs.enum';
 import {AbstractEntity} from '../entities/abstract.entity';
 import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
-import {ApiResponse} from './api-reponse';
+import {ApiResponse} from './api-response';
 import {RestService} from '../../services/rest-service';
 import {AngularRestModule} from '../../angular-rest.module';
 import {EntityFactoryHelper} from '../helpers/entity-factory.helper';

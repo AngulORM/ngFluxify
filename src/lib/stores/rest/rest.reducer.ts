@@ -2,7 +2,7 @@ import {Map} from 'immutable';
 import {Reducer} from 'redux';
 import {AbstractReducer} from '../abstract.reducer';
 import {RestActions} from './rest.actions';
-import {AbstractEntity} from '../../domain/entities/abstract.entity';
+import {AbstractEntity} from '../../domain/entities';
 import {EntityManager} from '../../domain/api/entity-manager';
 
 
