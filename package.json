@@ -6,8 +6,6 @@
     "@angular/core": "^6.1.0"
   },
   "dependencies": {
-    "@angular/common": "^6.1.0",
-    "@angular/core": "^6.1.0",
     "@angular-redux/form": "^9.0.1",
     "@angular-redux/router": "^9.0.0",
     "@angular-redux/store": "^9.0.0",
@@ -18,8 +16,6 @@
     "redux-observable": "^1.0.0"
   },
   "devDependencies": {
-    "@angular/common": "^6.1.0",
-    "@angular/core": "^6.1.0",
     "@commitlint/cli": "^7.0.0",
     "@commitlint/config-conventional": "^7.0.1",
     "tslint": "^5.11.0"

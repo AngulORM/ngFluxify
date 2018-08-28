@@ -1,7 +1,5 @@
 import {isDevMode} from '@angular/core';
-import {NgRedux} from '@angular-redux/store';
 import CryptoJS from 'crypto-js';
-import {HttpClient} from '@angular/common/http';
 import {ApiRequest} from './api-request';
 import {Subject} from 'rxjs/internal/Subject';
 import {Observable} from 'rxjs/internal/Observable';
@@ -13,7 +11,6 @@ import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ApiResponse} from './api-response';
 import {RestService} from '../../services/rest-service';
-import {AngularRestModule} from '../../angular-rest.module';
 import {EntityFactoryHelper} from '../helpers/entity-factory.helper';
 
 export class EntityManager<T extends AbstractEntity> implements Iterator<[number, T]> {
@@ -51,14 +48,6 @@ export class EntityManager<T extends AbstractEntity> implements Iterator<[number
 
       return () => sub.unsubscribe();
     }));
-
-    if (!this.service) {
-      this.service = new RestService<T>(
-        this.actionsManager,
-        this.modelType,
-        AngularRestModule.injector.get(HttpClient),
-        AngularRestModule.injector.get(NgRedux));
-    }
   }
 
   static getUniqueId(): number {

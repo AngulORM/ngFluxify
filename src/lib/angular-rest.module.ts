@@ -15,7 +15,6 @@ import {HttpClientModule} from '@angular/common/http';
   exports: [AngularRestComponent]
 })
 export class AngularRestModule {
-
   static injector: Injector;
   static ngRedux: NgRedux<IAppState>;
 
