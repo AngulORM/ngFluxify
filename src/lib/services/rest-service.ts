@@ -8,13 +8,14 @@ import {Observable} from 'rxjs/internal/Observable';
 import {ApiRequest} from '../domain/api/api-request';
 import {UrlParserHelper} from '../domain/helpers/url-parser.helper';
 import {ApiResponse} from '../domain/api/api-reponse';
-import {AbstractEntity} from '../domain/entities/abstract.entity';
-import {entities} from '../domain/rest-entities';
+import {entitiesList} from '../domain/entities.list';
 import {BaseActionsManager} from '../stores/base.action';
-import {RestEntityManager} from '../domain/api/rest-entity-manager';
-import {RestEntityDescriptor} from "../domain/api/rest-entity.descriptor";
+import {EntityManager} from '../domain/api/entity-manager';
+import {RestEntityDescriptor} from "../domain/descriptors";
+import {IEntityService} from "./IEntity.service";
+import {AbstractRestEntity} from "../domain/entities";
 
-export class RestService<T extends AbstractEntity> {
+export class RestService<T extends AbstractRestEntity> implements IEntityService<RestEntityDescriptor> {
     protected static options = {
         withCredentials: true
     };
@@ -26,7 +27,7 @@ export class RestService<T extends AbstractEntity> {
                 protected resourceType,
                 protected httpClient: HttpClient,
                 protected ngRedux: NgRedux<IAppState>) {
-        entities.forEach((element: RestEntityDescriptor): void => {
+        entitiesList.forEach((element: RestEntityDescriptor): void => {
             if (new element.class() instanceof this.resourceType) {
                 this.resource = element;
             }
@@ -151,7 +152,7 @@ export class RestService<T extends AbstractEntity> {
         let observer: Observable<any>;
 
         const request: ApiRequest = <ApiRequest>{
-            uniqueId: RestEntityManager.getUniqueId(),
+            uniqueId: EntityManager.getUniqueId(),
             url: UrlParserHelper.parse(url),
             params: params,
             method: method

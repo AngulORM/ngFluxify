@@ -1,29 +1,18 @@
-// import { RestService } from '../../services';
-// import { ApiRequest, ApiResponse, RestModelManager } from '../api';
+import {EntityManager} from "../api/entity-manager";
+import {IEntityService} from "../../services/IEntity.service";
+import {EntityDescriptor} from "../descriptors";
 
 export abstract class AbstractEntity {
+    public static entityManager: EntityManager<AbstractEntity>;
+    protected static entityService: IEntityService<EntityDescriptor>;
+
   id = -1;
-//   service: RestService<AbstractModel>;
-//   manager: RestModelManager<AbstractModel>;
-  protected abstract readonly entityIdentifier: string;
 
-  create(): void {
-    // this.service.create(this);
-  }
+    public abstract create(): void;
 
-  save(params: Map<string, any> = null): Promise<number> {
-    return null;
-  }
+    public abstract read(): void;
 
-  read(): Promise<null> {
-    return null;
-  }
+    public abstract save(): void;
 
-  patch(values: Map<string, any>): Promise<null> {
-    return null;
-  }
-
-  delete(params: Map<string, any> = null): Promise<null> {
-    return null;
-  }
+    public abstract remove(): void;
 }

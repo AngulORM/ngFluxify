@@ -1,22 +1,22 @@
-import { isDevMode } from '@angular/core';
-import { NgRedux } from '@angular-redux/store';
+import {isDevMode} from '@angular/core';
+import {NgRedux} from '@angular-redux/store';
 import CryptoJS from 'crypto-js';
-import { HttpClient } from '@angular/common/http';
-import { ApiRequest } from './api-request';
-import { Subject } from 'rxjs/internal/Subject';
-import { Observable } from 'rxjs/internal/Observable';
-import { Observer } from 'rxjs/internal/types';
-import { Subscription } from 'rxjs/internal/Subscription';
-import { Comparateurs } from './comparateurs.enum';
-import { AbstractEntity } from '../entities/abstract.entity';
-import { BaseActionsManager } from '../../stores/base.action';
-import { ActionsManagerFactory } from '../../stores/action.factory';
-import { ApiResponse } from './api-reponse';
-import { RestService } from '../../services/rest-service';
-import { AngularRestModule } from '../../angular-rest.module';
-import { EntityFactoryHelper } from '../helpers/entity-factory.helper';
+import {HttpClient} from '@angular/common/http';
+import {ApiRequest} from './api-request';
+import {Subject} from 'rxjs/internal/Subject';
+import {Observable} from 'rxjs/internal/Observable';
+import {Observer} from 'rxjs/internal/types';
+import {Subscription} from 'rxjs/internal/Subscription';
+import {Comparateurs} from './comparateurs.enum';
+import {AbstractEntity} from '../entities/abstract.entity';
+import {BaseActionsManager} from '../../stores/base.action';
+import {ActionsManagerFactory} from '../../stores/action.factory';
+import {ApiResponse} from './api-reponse';
+import {RestService} from '../../services/rest-service';
+import {AngularRestModule} from '../../angular-rest.module';
+import {EntityFactoryHelper} from '../helpers/entity-factory.helper';
 
-export class RestEntityManager<T extends AbstractEntity> implements Iterator<[number, T]> {
+export class EntityManager<T extends AbstractEntity> implements Iterator<[number, T]> {
   private static uniqueId = -100;
   readonly actionsManager: BaseActionsManager =
     ActionsManagerFactory.getActionsManager(CryptoJS.SHA256(String(this.modelType)).toString(CryptoJS.enc.Hex));
@@ -62,7 +62,7 @@ export class RestEntityManager<T extends AbstractEntity> implements Iterator<[nu
   }
 
   static getUniqueId(): number {
-    return --RestEntityManager.uniqueId;
+      return --EntityManager.uniqueId;
   }
 
   next(): IteratorResult<[number, T]> {
@@ -204,7 +204,7 @@ export class RestEntityManager<T extends AbstractEntity> implements Iterator<[nu
         request: ApiRequest,
         response: ApiResponse }) => {
         if (obj.id === requestId &&
-          (!obj.response || !obj.response.estValide() || !obj.response.data || (obj.response.data.id === undefined))) {
+            (!obj.response || !obj.response.isValid() || !obj.response.data || (obj.response.data.id === undefined))) {
           if (sub) {
             sub.unsubscribe();
           }
@@ -322,7 +322,7 @@ export class RestEntityManager<T extends AbstractEntity> implements Iterator<[nu
 
       if (!this.isComplete && this.loading.has(uniqueId)) {
         loadingSub = this.observeLoading().subscribe((obj: { id: number, request: ApiRequest, response: ApiResponse }) => {
-          if ((obj.id === uniqueId || obj.id === -1) && (!obj.response || !obj.response.estValide() || !obj.response.data)) {
+            if ((obj.id === uniqueId || obj.id === -1) && (!obj.response || !obj.response.isValid() || !obj.response.data)) {
             if (sub) {
               sub.unsubscribe();
             }

@@ -1,9 +1,9 @@
-import { Map } from 'immutable';
-import { Reducer } from 'redux';
-import { AbstractReducer } from '../abstract.reducer';
-import { RestActions } from './rest.actions';
-import { AbstractEntity } from '../../domain/entities/abstract.entity';
-import { RestEntityManager } from '../../domain/api/rest-entity-manager';
+import {Map} from 'immutable';
+import {Reducer} from 'redux';
+import {AbstractReducer} from '../abstract.reducer';
+import {RestActions} from './rest.actions';
+import {AbstractEntity} from '../../domain/entities/abstract.entity';
+import {EntityManager} from '../../domain/api/entity-manager';
 
 
 const REST_INITIAL_STATE: Map<string, any> = Map({
@@ -14,7 +14,7 @@ const REST_INITIAL_STATE: Map<string, any> = Map({
 export class RestReducer<T extends AbstractEntity> extends AbstractReducer {
   private state: Map<string, any> = REST_INITIAL_STATE;
 
-  constructor(modelManager: RestEntityManager<T>) {
+    constructor(modelManager: EntityManager<T>) {
     super(modelManager.actionsManager);
     this.state = this.state.set('manager', modelManager);
   }
@@ -23,7 +23,7 @@ export class RestReducer<T extends AbstractEntity> extends AbstractReducer {
     return (state: Map<string, any> = this.state, action: any): Map<string, any> => {
       if ((<string>action.type).match(this.actionsManager.getActionScheme())) {
         const oldState: string = state.get('state');
-        const manager: RestEntityManager<T> = state.get('manager');
+          const manager: EntityManager<T> = state.get('manager');
 
         switch (action.type) {
           case this.actionsManager.getHTTPRequestAction(RestActions.CREATE):

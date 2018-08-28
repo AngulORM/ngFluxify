@@ -1,8 +1,8 @@
-import {entities} from '../domain/rest-entities';
-import {EntityDescriptor} from "../domain/api/entity.descriptor";
+import {entitiesList} from '../domain/entities.list';
+import {EntityDescriptor} from "../domain/descriptors/entity.descriptor";
 
 export function Entity(entityDescriptor: EntityDescriptor): ClassDecorator {
     return function (constructor: any) {
-        entities.push(entityDescriptor);
+        entitiesList.push(entityDescriptor);
     };
 }
