@@ -1,10 +1,10 @@
-import { AbstractEntity } from '../entities/abstract.entity';
-import { RestEntityManager } from '../api/rest-entity-manager';
+import {AbstractEntity} from '../entities/abstract.entity';
+import {EntityManager} from '../api/entity-manager';
 import * as moment from 'moment-timezone';
-import { RestService } from '../../services/rest-service';
+import {RestService} from '../../services/rest-service';
 
 export class EntityFactoryHelper {
-  static create<T extends AbstractEntity>(modelType, jsonObject: any, manager: RestEntityManager<T>, service: RestService<T>): T {
+    static create<T extends AbstractEntity>(modelType, jsonObject: any, manager: EntityManager<T>, service: RestService<T>): T {
     const model = new modelType();
     model.manager = manager;
     model.service = service;
