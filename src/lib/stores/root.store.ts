@@ -1,21 +1,23 @@
-import {combineReducers, ReducersMapObject} from 'redux';
+import {combineReducers, Reducer, ReducersMapObject} from 'redux';
 import {RestReducer} from './rest/rest.reducer';
-import {entitiesList} from '../domain/entities.list';
-import {EntityManager} from '../domain/api/entity-manager';
-import {EntityDescriptor} from "../domain/descriptors";
+import {EntityDescriptor} from '../domain/descriptors';
 
 export interface IAppState {
-    [key: string]: any;
+  [key: string]: any;
 }
 
 export class RootReducer {
-    public static getReducer() {
-        const reducers: ReducersMapObject = {};
+  public static getReducer(entityDescriptors: EntityDescriptor[]): Reducer {
+    const reducers: ReducersMapObject = {};
 
-        entitiesList.forEach((re: EntityDescriptor) => {
-            reducers[re.class.name] = new RestReducer<typeof re.class>(new EntityManager<typeof re.class>(re.class)).createReducer();
-        });
+    entityDescriptors.forEach((entityDescriptor: EntityDescriptor) => {
+      reducers[entityDescriptor.name] = RootReducer.initEntityReducer(entityDescriptor);
+    });
 
-        return combineReducers(reducers);
-    }
+    return combineReducers(reducers);
+  }
+
+  public static initEntityReducer(entityDescriptor: EntityDescriptor): Reducer {
+    return new RestReducer<typeof entityDescriptor.class>(entityDescriptor.class.entityManager).createReducer();
+  }
 }

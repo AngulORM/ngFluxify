@@ -8,12 +8,12 @@ import {Observable} from 'rxjs/internal/Observable';
 import {ApiRequest} from '../domain/api/api-request';
 import {UrlParserHelper} from '../domain/helpers/url-parser.helper';
 import {ApiResponse} from '../domain/api/api-response';
-import {entitiesList} from '../domain/entities.list';
 import {BaseActionsManager} from '../stores/base.action';
 import {EntityManager} from '../domain/api/entity-manager';
-import {RestEntityDescriptor} from "../domain/descriptors";
-import {IEntityService} from "./IEntity.service";
-import {AbstractRestEntity} from "../domain/entities";
+import {AbstractRestEntity} from '../domain/entities';
+import {RestEntityDescriptor} from '../domain/descriptors';
+import {IEntityService} from './IEntity.service';
+import {AngularRestModule} from '../angular-rest.module';
 
 export class RestService<T extends AbstractRestEntity> implements IEntityService<RestEntityDescriptor> {
     protected static options = {
@@ -27,7 +27,7 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
                 protected resourceType,
                 protected httpClient: HttpClient,
                 protected ngRedux: NgRedux<IAppState>) {
-        entitiesList.forEach((element: RestEntityDescriptor): void => {
+      AngularRestModule.entities.forEach((element: RestEntityDescriptor): void => {
             if (new element.class() instanceof this.resourceType) {
                 this.resource = element;
             }
