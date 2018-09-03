@@ -1,6 +1,6 @@
 import {combineReducers, Reducer, ReducersMapObject} from 'redux';
-import {RestReducer} from './rest/rest.reducer';
 import {EntityDescriptor} from '../domain/descriptors';
+import {AbstractReducer} from './abstract.reducer';
 
 export interface IAppState {
   [key: string]: any;
@@ -18,6 +18,8 @@ export class RootReducer {
   }
 
   public static initEntityReducer(entityDescriptor: EntityDescriptor): Reducer {
-    return new RestReducer<typeof entityDescriptor.class>(entityDescriptor.class.entityManager).createReducer();
+    console.log(entityDescriptor.constructor);
+    const reducer: AbstractReducer<typeof entityDescriptor.class> = new entityDescriptor.reducerType(entityDescriptor);
+    return reducer.createReducer();
   }
 }

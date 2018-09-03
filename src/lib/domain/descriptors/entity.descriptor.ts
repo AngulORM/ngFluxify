@@ -1,4 +1,4 @@
-export class EntityDescriptor {
+export abstract class EntityDescriptor {
   class?: any;
   name: string;
 

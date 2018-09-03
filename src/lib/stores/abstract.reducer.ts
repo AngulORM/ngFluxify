@@ -1,64 +1,27 @@
-import { Reducer } from 'redux';
-import { BaseActionsManager } from './base.action';
+import {Map} from 'immutable';
+import {AnyAction, Reducer} from 'redux';
+import {AbstractEntity} from '../domain/entities';
+import {BaseActionsManager} from './base.action';
 
-export abstract class AbstractReducer {
-  private static expirations: any[] = [];
+const INITIAL_STATE: Map<string, any> = Map({
+  state: '',
+  entities: Map<number, AbstractEntity>()
+});
 
-  public constructor(protected actionsManager: BaseActionsManager) {
-    this.setActions();
+export abstract class AbstractReducer<T extends AbstractEntity> {
+  private state: Map<string, any> = INITIAL_STATE;
+
+  constructor(private actionsManager: BaseActionsManager) {
+
   }
 
-  /**
-   * Return the expiration date for a given data
-   * @param reducer string
-   * @param dataIdentifier string
-   * @returns Date|null
-   */
-  public static getExpiration(reducer: string, dataIdentifier: string): Date {
-    const reducerExpirations = AbstractReducer.expirations[reducer.toUpperCase()];
-    if (reducerExpirations) {
-      return reducerExpirations[dataIdentifier.toUpperCase()];
-    }
+  public createReducer(): Reducer<any> {
+    return (state: Map<string, any> = this.state, action: AnyAction): Map<string, any> => {
+      if ((<string>action.type).match(this.actionsManager.getActionScheme())) {
 
-    return;
-  }
-
-  /**
-   * Set all declared informations as expired
-   */
-  public static forceExpirations(): void {
-    const newExpirations: any[] = [];
-    for (const idReducer in AbstractReducer.expirations) {
-      if (AbstractReducer.expirations.hasOwnProperty(idReducer)) {
-        const newExpirationsReducer = [];
-        for (const idData in AbstractReducer.expirations[idReducer]) {
-          if (AbstractReducer.expirations[idReducer].hasOwnProperty(idData)) {
-            newExpirationsReducer[idData] = new Date();
-          }
-        }
-        newExpirations[idReducer] = newExpirationsReducer;
       }
-    }
 
-    AbstractReducer.expirations = newExpirations;
+      return state;
+    };
   }
-
-  public abstract createReducer(): Reducer<any>;
-
-  /**
-   * Store expiration date for a given data identifier
-   * @param dataIdentifier string
-   * @param validityDuration number Data duration in milliseconds, default 5 minutes
-   */
-  protected setExpiration(dataIdentifier: string, validityDuration: number = 30000): void {
-    let expirations: Date[] = AbstractReducer.expirations[this.actionsManager.reducerName.toUpperCase()];
-    if (!expirations) {
-      expirations = [];
-    }
-    expirations[dataIdentifier.toUpperCase()] = new Date(Date.now() + validityDuration);
-    AbstractReducer.expirations[this.actionsManager.reducerName.toUpperCase()] = expirations;
-  }
-
-  protected abstract setActions(): void;
-
 }
