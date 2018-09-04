@@ -18,7 +18,6 @@ export class RootReducer {
   }
 
   public static initEntityReducer(entityDescriptor: EntityDescriptor): Reducer {
-    console.log(entityDescriptor.constructor);
     const reducer: AbstractReducer<typeof entityDescriptor.class> = new entityDescriptor.reducerType(entityDescriptor);
     return reducer.createReducer();
   }

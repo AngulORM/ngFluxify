@@ -1,10 +1,25 @@
 import {AbstractReducer} from '../abstract.reducer';
 import {AbstractRestEntity} from '../../domain/entities';
-import {BaseActionsManager} from '../base.action';
 import {EntityDescriptor} from '../../domain/descriptors';
 
 export class RestReducer<T extends AbstractRestEntity> extends AbstractReducer<T> {
   constructor(entityDescriptor: EntityDescriptor) {
-    super(new BaseActionsManager(entityDescriptor.name));
+    super(entityDescriptor.name);
+  }
+
+  protected create(): T | T[] {
+    throw new Error('Not implemented');
+  }
+
+  protected read(): T | T[] {
+    throw new Error('Not implemented');
+  }
+
+  protected update(): T | T[] {
+    throw new Error('Not implemented');
+  }
+
+  protected delete(): number | number[] {
+    throw new Error('Not implemented');
   }
 }
