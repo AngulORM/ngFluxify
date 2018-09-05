@@ -15,8 +15,7 @@ import {EntityFactoryHelper} from '../helpers/entity-factory.helper';
 
 export class EntityManager<T extends AbstractEntity> implements Iterator<[number, T]> {
   private static uniqueId = -100;
-  readonly actionsManager: BaseActionsManager =
-    ActionsManagerFactory.getActionsManager(CryptoJS.SHA256(String(this.modelType)).toString(CryptoJS.enc.Hex));
+  readonly actionsManager: BaseActionsManager = ActionsManagerFactory.getActionsManager(CryptoJS.SHA256(String(this.modelType)).toString(CryptoJS.enc.Hex));
   // Contient la liste des objets ainsi que leur date d'expiration
   private objects: Map<number, { value: T, age: Date }> = new Map<number, { value: T, age: Date }>();
   // Permet de diffuser les changements apportés à la liste l'objets
@@ -95,7 +94,7 @@ export class EntityManager<T extends AbstractEntity> implements Iterator<[number
    */
   getAll(observable: boolean = true): Promise<T[]> | Observable<T[]> {
     if (!this.isComplete && !this.loading.has(-1)) {
-      this.service.read();
+      // this.service.read();
     }
 
     if (observable) {
@@ -165,7 +164,7 @@ export class EntityManager<T extends AbstractEntity> implements Iterator<[number
     let requestId: number;
     // Si la valeur n'existe pas ou si elle est expirée
     if ((!value || this.isExpired(value.age)) && !this.loading.has(id) && (getDetails || !this.loading.has(-1))) {
-      requestId = this.service.read(id, params);
+      // requestId = this.service.read(id, params);
     }
 
     // Si on demande un observable, on le retourne
@@ -185,7 +184,7 @@ export class EntityManager<T extends AbstractEntity> implements Iterator<[number
           }
           resolve(val);
         } else if (!this.loading.has(id)) {
-          requestId = this.service.read(id, params);
+          // requestId = this.service.read(id, params);
         }
       });
       const loadingSub: Subscription = this.observeLoading().subscribe((obj: {
@@ -288,7 +287,7 @@ export class EntityManager<T extends AbstractEntity> implements Iterator<[number
         }
       });
 
-      uniqueId = this.service.read(null, params);
+      // uniqueId = this.service.read(null, params);
     }
 
     if (observable) {

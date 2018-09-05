@@ -1,5 +1,4 @@
-import { BaseActionsManager } from './base.action';
-
+import {BaseActionsManager} from './base.action';
 
 export class ActionsManagerFactory {
   private static actionsManagers: BaseActionsManager[] = [];
