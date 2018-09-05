@@ -1,5 +1,5 @@
 import {EntityDescriptor} from './entity.descriptor';
-import {RestReducer} from '../../stores/rest/rest.reducer';
+import {RestReducer} from '../../stores';
 
 export class RestEntityDescriptor extends EntityDescriptor {
   readonly reducerType: any = RestReducer;

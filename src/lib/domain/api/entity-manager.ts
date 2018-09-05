@@ -15,8 +15,7 @@ import {EntityFactoryHelper} from '../helpers/entity-factory.helper';
 
 export class EntityManager<T extends AbstractEntity> implements Iterator<[number, T]> {
   private static uniqueId = -100;
-  readonly actionsManager: BaseActionsManager =
-    ActionsManagerFactory.getActionsManager(CryptoJS.SHA256(String(this.modelType)).toString(CryptoJS.enc.Hex));
+  readonly actionsManager: BaseActionsManager = ActionsManagerFactory.getActionsManager(CryptoJS.SHA256(String(this.modelType)).toString(CryptoJS.enc.Hex));
   // Contient la liste des objets ainsi que leur date d'expiration
   private objects: Map<number, { value: T, age: Date }> = new Map<number, { value: T, age: Date }>();
   // Permet de diffuser les changements apportés à la liste l'objets

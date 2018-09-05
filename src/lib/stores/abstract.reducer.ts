@@ -2,6 +2,7 @@ import {Map} from 'immutable';
 import {AnyAction, Reducer} from 'redux';
 import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
+import {ActionsManagerFactory} from './action.factory';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
@@ -18,7 +19,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected readonly actionsManager: BaseActionsManager;
 
   constructor(identifier: string) {
-    this.actionsManager = new BaseActionsManager(identifier);
+    this.actionsManager = ActionsManagerFactory.getActionsManager(identifier);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_CREATE);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_READ);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_UPDATE);
@@ -35,25 +36,25 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_READ):
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_DELETE):
-            // Set loading
+            // Todo: Set loading
             break;
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_CREATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_READ):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_DELETE):
-            // Set error
+            // Todo: Set error
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_CREATE):
-            state = this.setEntities(state, this.create());
+            state = this.setEntities(state, this.create(action));
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_READ):
-            state = this.setEntities(state, this.read());
+            state = this.setEntities(state, this.read(action));
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_UPDATE):
-            state = this.setEntities(state, this.update());
+            state = this.setEntities(state, this.update(action));
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_DELETE):
-            state = this.removeEntities(state, this.delete());
+            state = this.removeEntities(state, this.delete(action));
             break;
           default:
             state = this.handleCustomActions(state, action);
@@ -101,11 +102,11 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     return state;
   }
 
-  protected abstract create(): T | T[];
+  protected abstract create(action: AnyAction): T | T[];
 
-  protected abstract read(): T | T[];
+  protected abstract read(action: AnyAction): T | T[];
 
-  protected abstract update(): T | T[];
+  protected abstract update(action: AnyAction): T | T[];
 
-  protected abstract delete(): number | number[];
+  protected abstract delete(action: AnyAction): number | number[];
 }

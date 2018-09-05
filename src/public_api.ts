@@ -1,5 +1,5 @@
 /*
- * Public API Surface of angular-rest
+ * Public API Surface of angular-reducers
  */
 
 export * from './lib/angular-rest.service';
