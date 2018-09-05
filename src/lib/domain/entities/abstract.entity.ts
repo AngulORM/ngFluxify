@@ -1,18 +1,22 @@
 import {EntityManager} from '../api/entity-manager';
-import {IEntityService} from '../../services/IEntity.service';
-import {EntityDescriptor} from '../descriptors';
+import {IEntityService} from '../../services';
+import {Observable} from 'rxjs';
 
 export abstract class AbstractEntity {
-    public static entityManager: EntityManager<AbstractEntity>;
-    protected static entityService: IEntityService<EntityDescriptor>;
+  public static entityManager: EntityManager<AbstractEntity>;
+  public static entityService: IEntityService<AbstractEntity>;
 
   public id = -1;
 
-    public abstract create(): void;
+  public static read(id: number): Observable<AbstractEntity> {
+    return this.entityManager.getById(id);
+  }
 
-    public abstract read(): void;
+  public abstract create(): void;
 
-    public abstract save(): void;
+  public abstract read(): void;
 
-    public abstract remove(): void;
+  public abstract save(): void;
+
+  public abstract remove(): void;
 }

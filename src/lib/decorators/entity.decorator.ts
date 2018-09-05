@@ -4,8 +4,9 @@ import {AngularRestModule} from '../angular-rest.module';
 
 export function Entity<T extends EntityDescriptor>(entityDescriptor: T): ClassDecorator {
   return function (constructor: any) {
-    constructor.entityManager = new EntityManager<typeof constructor>(constructor);
     entityDescriptor.class = constructor;
+    constructor.entityService = new entityDescriptor.serviceType();
+    constructor.entityManager = new EntityManager<typeof constructor>(entityDescriptor);
 
     AngularRestModule.registerEntity(entityDescriptor);
   };
