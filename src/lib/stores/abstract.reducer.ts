@@ -6,14 +6,15 @@ import {ActionsManagerFactory} from './action.factory';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
-  entities: Map<number, AbstractEntity>()
+  entities: Map<number, AbstractEntity>(),
+  isComplete: false
 });
 
 export abstract class AbstractReducer<T extends AbstractEntity> {
-  private static readonly ACTION_CREATE = ['CREATE'];
-  private static readonly ACTION_READ = ['READ'];
-  private static readonly ACTION_UPDATE = ['UPDATE'];
-  private static readonly ACTION_DELETE = ['DELETE'];
+  static readonly ACTION_CREATE = ['CREATE'];
+  static readonly ACTION_READ = ['READ'];
+  static readonly ACTION_UPDATE = ['UPDATE'];
+  static readonly ACTION_DELETE = ['DELETE'];
 
   private state: Map<string, any> = INITIAL_STATE;
   protected readonly actionsManager: BaseActionsManager;
@@ -37,12 +38,14 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_DELETE):
             // Todo: Set loading
+            console.log(action);
             break;
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_CREATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_READ):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_DELETE):
             // Todo: Set error
+            console.log(action);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_CREATE):
             state = this.setEntities(state, this.create(action));

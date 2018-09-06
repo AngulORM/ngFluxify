@@ -12,11 +12,19 @@ export abstract class AbstractEntity {
     return this.entityManager.getById(id);
   }
 
-  public abstract create(): void;
+  public static readAll(): Observable<AbstractEntity[]> {
+    return this.entityManager.getAll();
+  }
 
-  public abstract read(): void;
+  public read(): void {
 
-  public abstract save(): void;
+  }
 
-  public abstract remove(): void;
+  public save(): Observable<AbstractEntity> {
+    return this.constructor.entityManager.save(this);
+  }
+
+  public remove(): void {
+
+  }
 }

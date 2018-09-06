@@ -1,1 +1,1 @@
-export * from './rest.reducer';
+export * from './dumb.reducer';
