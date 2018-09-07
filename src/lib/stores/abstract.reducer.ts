@@ -3,11 +3,15 @@ import {AnyAction, Reducer} from 'redux';
 import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
+import {ErrorAction, RequestAction, ResponseAction} from './actions';
+import {TransactionState} from '../domain/api';
+import {isNumber} from 'util';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
   entities: Map<number, AbstractEntity>(),
-  isComplete: false
+  isComplete: false,
+  transactions: Map<number, TransactionState>()
 });
 
 export abstract class AbstractReducer<T extends AbstractEntity> {
@@ -37,27 +41,33 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_READ):
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_DELETE):
-            // Todo: Set loading
-            console.log(action);
+            state = this.startTransaction(<RequestAction>action, state);
             break;
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_CREATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_READ):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_UPDATE):
           case this.actionsManager.getErrorAction(AbstractReducer.ACTION_DELETE):
-            // Todo: Set error
-            console.log(action);
+            state = this.errorTransaction(<ErrorAction>action, state);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_CREATE):
-            state = this.setEntities(state, this.create(action));
+            const entitiesCreated = this.create(action);
+            state = this.setEntities(state, entitiesCreated);
+            state = this.finishTransaction(<ResponseAction>action, state, entitiesCreated);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_READ):
-            state = this.setEntities(state, this.read(action));
+            const entitiesRead = this.read(action);
+            state = this.setEntities(state, entitiesRead);
+            state = this.finishTransaction(<ResponseAction>action, state, entitiesRead);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_UPDATE):
-            state = this.setEntities(state, this.update(action));
+            const entitiesUpdated = this.update(action);
+            state = this.setEntities(state, entitiesUpdated);
+            state = this.finishTransaction(<ResponseAction>action, state, entitiesUpdated);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_DELETE):
-            state = this.removeEntities(state, this.delete(action));
+            const entitiesDeleted = this.delete(action);
+            state = this.removeEntities(state, entitiesDeleted);
+            state = this.finishTransaction(<ResponseAction>action, state, entitiesDeleted);
             break;
           default:
             state = this.handleCustomActions(state, action);
@@ -67,6 +77,36 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
       return state;
     };
+  }
+
+  protected startTransaction(action: RequestAction, state: Map<string, any>): Map<string, any> {
+    return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
+      action.transactionId,
+      {state: TransactionState.started}
+    ));
+  }
+
+  protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: T | T[] | number | number[]): Map<string, any> {
+    const entitiesId = [];
+    if (Array.isArray(entities)) {
+      for (const entity of entities) {
+        entitiesId.push(isNumber(entity) ? entity : (<T>entity).id);
+      }
+    } else {
+      entitiesId.push(isNumber(entities) ? entities : (<T>entities).id);
+    }
+
+    return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
+      action.transactionId,
+      {state: TransactionState.finished, entities: entitiesId}
+    ));
+  }
+
+  protected errorTransaction(action: ErrorAction, state: Map<string, any>): Map<string, any> {
+    return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
+      action.transactionId,
+      {state: TransactionState.error, error: action.error}
+    ));
   }
 
   protected setEntities(state: Map<string, any>, data: T | T[]): Map<string, any> {

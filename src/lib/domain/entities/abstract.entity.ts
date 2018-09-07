@@ -21,7 +21,7 @@ export abstract class AbstractEntity {
   }
 
   public save(): Observable<AbstractEntity> {
-    return this.constructor.entityManager.save(this);
+    return this.constructor['entityManager'].save(this);
   }
 
   public remove(): void {
