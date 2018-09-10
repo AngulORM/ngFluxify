@@ -52,7 +52,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
   }
 
   protected delete(action: AnyAction): number | number[] {
-    throw new Error('Not implemented');
+    return action.data;
   }
 
   private instanciateEntity(jsonObject: any): T {

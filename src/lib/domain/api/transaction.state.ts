@@ -3,7 +3,7 @@ export class TransactionState {
   static readonly finished: string = 'FINISHED';
   static readonly error: string = 'ERROR';
 
-  state: String;
+  state: string;
   error?: Error;
   entities?: number[];
 }

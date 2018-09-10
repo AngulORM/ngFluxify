@@ -1,4 +1,4 @@
-import {EntityManager} from '../api/entity-manager';
+import {EntityManager} from '../api';
 import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
 
@@ -17,14 +17,14 @@ export abstract class AbstractEntity {
   }
 
   public read(): void {
-
+    return this.constructor['read'](this.id);
   }
 
   public save(): Observable<AbstractEntity> {
     return this.constructor['entityManager'].save(this);
   }
 
-  public remove(): void {
-
+  public delete(): Promise<number> {
+    return this.constructor['entityManager'].delete(this);
   }
 }
