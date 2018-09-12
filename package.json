@@ -9,9 +9,6 @@
     "@angular-redux/form": "^9.0.1",
     "@angular-redux/router": "^9.0.0",
     "@angular-redux/store": "^9.0.0",
-    "crypto-js": "^3.1.9-1",
-    "moment": "^2.22.2",
-    "moment-timezone": "^0.5.21",
     "redux": "^4.0.0",
     "redux-observable": "^1.0.0"
   },

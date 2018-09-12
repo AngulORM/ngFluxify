@@ -6,7 +6,7 @@ import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
 import {Map} from 'immutable';
 import {IEntityService} from '../../services';
-import {filter, map, mergeMap} from 'rxjs/operators';
+import {filter, map, mergeMap, take} from 'rxjs/operators';
 import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from '../../stores/actions';
@@ -69,7 +69,7 @@ export class EntityManager<T extends AbstractEntity> {
           if (transaction.state === TransactionState.error) {
             throwError(transaction.error);
           }
-          return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
+          return EntityManager.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
         }));
     }
 
@@ -97,7 +97,7 @@ export class EntityManager<T extends AbstractEntity> {
     return EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities']).pipe(map((entities: Map<number, T>): T[] => entities.toArray()));
   }
 
-  save(entity: T): Observable<T> {
+  save(entity: T): Promise<Observable<T>> {
     const transactionId = this.transactionId;
     if (entity.id !== -1) {
       EntityManager.ngRedux.dispatch(<RequestAction>{type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE), transactionId: transactionId});
@@ -111,14 +111,21 @@ export class EntityManager<T extends AbstractEntity> {
         .catch(error => EntityManager.ngRedux.dispatch(<ErrorAction>{type: this.actionManager.getErrorAction(AbstractReducer.ACTION_CREATE), transactionId: transactionId, error: error}));
     }
 
-    return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
-      .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe<T>(mergeMap((transaction: TransactionState) => {
-        if (transaction.state === TransactionState.error || transaction.entities.length < 1) {
-          throwError(transaction.error);
-        }
-        return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
-      }));
+    return new Promise<Observable<T>>((resolve, reject) => {
+      EntityManager.ngRedux
+        .select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
+        .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
+        .pipe(map((transaction: TransactionState) => {
+          if (transaction.state === TransactionState.error || transaction.entities.length < 1) {
+            throwError(transaction.error);
+          }
+          return transaction;
+        }))
+        .pipe(take(1))
+        .toPromise()
+        .then(transaction => resolve(EntityManager.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]])))
+        .catch(error => reject(error));
+    });
   }
 
   delete(entity: T): Promise<number> {
@@ -136,6 +143,7 @@ export class EntityManager<T extends AbstractEntity> {
         }
         return transaction.entities[0];
       }))
+      .pipe(take(1))
       .toPromise();
   }
 

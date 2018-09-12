@@ -20,7 +20,7 @@ export abstract class AbstractEntity {
     return this.constructor['read'](this.id);
   }
 
-  public save(): Observable<AbstractEntity> {
+  public save(): Promise<Observable<AbstractEntity>> {
     return this.constructor['entityManager'].save(this);
   }
 
