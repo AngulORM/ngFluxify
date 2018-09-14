@@ -44,7 +44,7 @@ export class BaseActionsManager {
    * @param actionParams
    * @returns {undefined|string}
    */
-  getRequestAction(actionParams: string[]): string {
+  getRequestAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.requestKey]));
   }
 
@@ -53,7 +53,7 @@ export class BaseActionsManager {
    * @param actionParams
    * @returns {undefined|string}
    */
-  getResponseAction(actionParams: string[]): string {
+  getResponseAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.responseKey]));
   }
 
@@ -62,7 +62,7 @@ export class BaseActionsManager {
    * @param actionParams
    * @returns {undefined|string}
    */
-  getErrorAction(actionParams: string[]): string {
+  getErrorAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.errorKey]));
   }
 

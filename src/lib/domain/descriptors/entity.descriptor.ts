@@ -1,5 +1,6 @@
 export abstract class EntityDescriptor {
   abstract readonly reducerType: any;
+  abstract readonly serviceType: any;
   class?: any;
   name: string;
 
