@@ -5,9 +5,11 @@ import {IAppState, RootReducer} from './stores';
 import {NgReduxRouterModule} from '@angular-redux/router';
 import {HttpClientModule} from '@angular/common/http';
 import {EntityDescriptor} from './domain/descriptors';
+import {BrowserModule} from '@angular/platform-browser';
 
 @NgModule({
   imports: [
+    BrowserModule,
     HttpClientModule,
     NgReduxModule,
     NgReduxRouterModule,
