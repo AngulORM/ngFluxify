@@ -128,6 +128,10 @@ export class EntityManager<T extends AbstractEntity> {
     });
   }
 
+  get count(): Observable<number> {
+    return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length));
+  }
+
   delete(entity: T): Promise<number> {
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE), transactionId: transactionId});
@@ -137,14 +141,14 @@ export class EntityManager<T extends AbstractEntity> {
 
     return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
       .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe(map((transaction: TransactionState) => {
+      .pipe<number>(map((transaction: TransactionState): number => {
         if (transaction.state === TransactionState.error) {
           throwError(transaction.error);
         }
         return transaction.entities[0];
       }))
-      .pipe(take(1))
-      .toPromise();
+      .pipe<number>(take(1))
+      .toPromise<number>();
   }
 
   isExpired(id: number): boolean {
