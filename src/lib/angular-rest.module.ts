@@ -5,9 +5,13 @@ import {IAppState, RootReducer} from './stores';
 import {NgReduxRouterModule} from '@angular-redux/router';
 import {HttpClientModule} from '@angular/common/http';
 import {EntityDescriptor} from './domain/descriptors';
+import {BrowserModule} from '@angular/platform-browser';
+import {logger} from 'redux-logger';
+import {applyMiddleware} from 'redux';
 
 @NgModule({
   imports: [
+    BrowserModule,
     HttpClientModule,
     NgReduxModule,
     NgReduxRouterModule,
@@ -28,7 +32,7 @@ export class AngularRestModule {
     AngularRestModule.injector = injector;
     AngularRestModule.ngRedux = ngRedux;
 
-    const enhancers = [];
+    const enhancers = [applyMiddleware(logger)];
     ngRedux.configureStore(RootReducer.getReducer(AngularRestModule.entities), {}, [], enhancers);
   }
 
