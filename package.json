@@ -7,11 +7,11 @@
   },
   "dependencies": {
     "@angular-redux/form": "^9.0.1",
-    "@angular-redux/router": "^9.0.0",
     "@angular-redux/store": "^9.0.0",
     "redux": "^4.0.0",
     "redux-logger": "^3.0.6",
-    "redux-observable": "^1.0.0"
+    "redux-observable": "^1.0.0",
+    "rxjs": "^6.3.3"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
