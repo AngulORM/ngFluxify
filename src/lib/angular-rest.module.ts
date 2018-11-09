@@ -4,13 +4,11 @@ import {NgRedux, NgReduxModule} from '@angular-redux/store';
 import {IAppState, RootReducer} from './stores';
 import {HttpClientModule} from '@angular/common/http';
 import {EntityDescriptor} from './domain/descriptors';
-import {BrowserModule} from '@angular/platform-browser';
 import {logger} from 'redux-logger';
 import {applyMiddleware} from 'redux';
 
 @NgModule({
   imports: [
-    BrowserModule,
     HttpClientModule,
     NgReduxModule
   ],

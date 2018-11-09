@@ -22,6 +22,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   private state: Map<string, any> = INITIAL_STATE;
   protected readonly actionsManager: BaseActionsManager;
+  protected setCompleted = false;
 
   constructor(identifier: string) {
     this.actionsManager = ActionsManagerFactory.getActionsManager(identifier);
@@ -35,6 +36,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     return (state: Map<string, any> = this.state, action: AnyAction): Map<string, any> => {
       if ((<string>action.type).match(this.actionsManager.getActionScheme())) {
         state = state.set('state', action.type);
+        this.setCompleted = false;
 
         switch (action.type) {
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_CREATE):
@@ -72,6 +74,10 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
           default:
             state = this.handleCustomActions(state, action);
             break;
+        }
+
+        if (this.setCompleted) {
+          state = state.set('isComplete', true);
         }
       }
 
