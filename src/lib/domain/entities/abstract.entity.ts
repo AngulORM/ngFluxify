@@ -16,6 +16,10 @@ export abstract class AbstractEntity {
     return this.entityManager.getAll();
   }
 
+  public static get count(): Observable<number> {
+    return this.entityManager.count;
+  }
+
   public read(): void {
     return this.constructor['read'](this.id);
   }

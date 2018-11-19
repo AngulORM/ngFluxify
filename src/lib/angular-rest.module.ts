@@ -2,19 +2,15 @@ import {Injector, NgModule} from '@angular/core';
 import {AngularRestComponent} from './angular-rest.component';
 import {NgRedux, NgReduxModule} from '@angular-redux/store';
 import {IAppState, RootReducer} from './stores';
-import {NgReduxRouterModule} from '@angular-redux/router';
 import {HttpClientModule} from '@angular/common/http';
 import {EntityDescriptor} from './domain/descriptors';
-import {BrowserModule} from '@angular/platform-browser';
 import {logger} from 'redux-logger';
 import {applyMiddleware} from 'redux';
 
 @NgModule({
   imports: [
-    BrowserModule,
     HttpClientModule,
-    NgReduxModule,
-    NgReduxRouterModule,
+    NgReduxModule
   ],
   declarations: [AngularRestComponent],
   exports: [AngularRestComponent]

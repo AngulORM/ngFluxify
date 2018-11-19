@@ -37,6 +37,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
 
   protected read(action: AnyAction): T | T[] {
     if (Array.isArray(action.data)) {
+      this.setCompleted = true;
       return action.data.map(element => this.instanciateEntity(element));
     } else {
       return this.instanciateEntity(action.data);
