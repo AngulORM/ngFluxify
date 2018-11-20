@@ -7,6 +7,7 @@
 
 * [About ngFluxify](introduction/about-ngfluxify.md)
 * [Demo](introduction/demo.md)
+* [Some reading](introduction/some-reading.md)
 
 ## Concepts
 
