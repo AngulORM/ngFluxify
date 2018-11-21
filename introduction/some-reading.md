@@ -1,6 +1,10 @@
-# Some reading
+---
+description: >-
+  Here are some resources you can check out to have a better understanding about
+  the concepts behind ngFluxify.
+---
 
-Here are some resources you can check out to have a better understanding about the concepts behind ngFluxify.
+# Some reading
 
 * [https://facebook.github.io/flux/](https://facebook.github.io/flux/) - Original flux presentation
 * [http://krasimirtsonev.com/blog/article/dissection-of-flux-architecture-or-how-to-write-your-own-react](http://krasimirtsonev.com/blog/article/dissection-of-flux-architecture-or-how-to-write-your-own-react) - In depth flux dissection \(react\)
