@@ -1,5 +1,5 @@
 import {AbstractEntity} from './abstract.entity';
-import {EntityManager} from '../api/entity-manager';
+import {EntityManager} from '../api';
 import {RestService} from '../../services';
 
 export abstract class AbstractRestEntity extends AbstractEntity {
