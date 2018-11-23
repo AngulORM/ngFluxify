@@ -9,7 +9,7 @@ export abstract class AbstractEntity {
   public static entityService: IEntityService<AbstractEntity>;
   public static properties: Map<string, PropertyDescriptor> = new Map<string, PropertyDescriptor>();
 
-  @EntityProperty(new PropertyDescriptor(Number))
+  @EntityProperty({type: Number})
   public id = -1;
 
   public static read(id: number): Observable<AbstractEntity> {

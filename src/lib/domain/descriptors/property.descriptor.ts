@@ -1,7 +1,3 @@
-export class PropertyDescriptor {
+export interface PropertyDescriptor {
   readonly type;
-
-  constructor(_type) {
-    this.type = _type;
-  }
 }
