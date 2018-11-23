@@ -43,12 +43,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
 
     properties.forEach((value, key) => {
       if (key in jsonObject) {
-        try {
-          value.type.prototype.valueOf();
-          entity[key] = value.type(jsonObject[key]);
-        } catch {
-          entity[key] = new value.type(jsonObject[key]);
-        }
+        Reflect.set(entity, key, jsonObject[key]);
       }
     });
 

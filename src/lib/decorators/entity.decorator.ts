@@ -1,5 +1,5 @@
 import {EntityDescriptor} from '../domain/descriptors';
-import {EntityManager} from '../domain/api/entity-manager';
+import {EntityManager} from '../domain/api';
 import {AngularRestModule} from '../angular-rest.module';
 
 export function Entity<T extends EntityDescriptor>(entityDescriptor: T): ClassDecorator {
