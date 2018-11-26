@@ -15,7 +15,7 @@ import {TransactionState} from './transaction.state';
 export class EntityManager<T extends AbstractEntity> {
   private lastTransactionId = 0;
 
-  constructor(private entityDescriptor: EntityDescriptor) {
+  constructor(public readonly entityDescriptor: EntityDescriptor) {
 
   }
 
@@ -237,6 +237,43 @@ export class EntityManager<T extends AbstractEntity> {
       }))
       .pipe<number>(take(1))
       .toPromise<number>();
+  }
+
+  call(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<TransactionState> {
+    const transactionId = this.transactionId;
+    EntityManager.ngRedux.dispatch(<RequestAction>{
+      type: this.actionManager.getRequestAction(action),
+      transactionId: transactionId
+    });
+
+    const serviceResponse = callable.call(this.service, ...args);
+    if (isObservable(serviceResponse)) {
+      serviceResponse.subscribe(
+        data => EntityManager.ngRedux.dispatch(<ResponseAction>{
+          type: this.actionManager.getResponseAction(action),
+          transactionId: transactionId,
+          data: data
+        }),
+        error => EntityManager.ngRedux.dispatch(<ErrorAction>{
+          type: this.actionManager.getErrorAction(action),
+          transactionId: transactionId,
+          error: error
+        }));
+    } else {
+      (<Promise<any>>serviceResponse)
+        .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
+          type: this.actionManager.getResponseAction(action),
+          transactionId: transactionId,
+          data: data
+        }))
+        .catch(error => EntityManager.ngRedux.dispatch(<ErrorAction>{
+          type: this.actionManager.getErrorAction(action),
+          transactionId: transactionId,
+          error: error
+        }));
+    }
+
+    return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId]);
   }
 
   isExpired(id: number): boolean {

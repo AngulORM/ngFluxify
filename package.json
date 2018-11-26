@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^6.1.0",
-    "@angular/core": "^6.1.0"
+    "@angular/core": "^6.1.0",
+    "redux": "^4.0.0"
   },
   "dependencies": {
     "@angular-redux/form": "^9.0.1",

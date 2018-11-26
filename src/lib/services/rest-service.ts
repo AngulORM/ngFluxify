@@ -5,7 +5,7 @@ import {HttpClient} from '@angular/common/http';
 import {AngularRestModule} from '../angular-rest.module';
 
 export class RestService<T extends AbstractRestEntity> implements IEntityService<T> {
-  constructor(private entityDescriptor: RestEntityDescriptor) {
+  constructor(protected entityDescriptor: RestEntityDescriptor) {
 
   }
 

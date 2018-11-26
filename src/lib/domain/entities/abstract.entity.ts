@@ -1,11 +1,15 @@
 import {EntityManager} from '../api';
+import {PropertyDescriptor} from '../descriptors';
 import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
+import {EntityProperty} from '../../decorators';
 
 export abstract class AbstractEntity {
   public static entityManager: EntityManager<AbstractEntity>;
   public static entityService: IEntityService<AbstractEntity>;
+  public static properties: Map<string, PropertyDescriptor> = new Map<string, PropertyDescriptor>();
 
+  @EntityProperty({type: Number})
   public id = -1;
 
   public static read(id: number): Observable<AbstractEntity> {
