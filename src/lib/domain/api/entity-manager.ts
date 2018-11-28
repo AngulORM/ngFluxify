@@ -1,5 +1,5 @@
 import {AbstractEntity} from '../entities';
-import {isObservable, Observable, throwError} from 'rxjs';
+import {BehaviorSubject, isObservable, Observable, throwError} from 'rxjs';
 import {AngularRestModule} from '../../angular-rest.module';
 import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
@@ -104,6 +104,8 @@ export class EntityManager<T extends AbstractEntity> {
   }
 
   getAll(): Observable<T[]> {
+    const subject: BehaviorSubject<T[]> = new BehaviorSubject(this.entities.toArray());
+
     if (!this.isComplete) {
       const transactionId = this.transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
@@ -138,18 +140,30 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       }
 
-      return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
+      EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
         .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
         .pipe<T[]>(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error) {
-
             throwError(transaction.error);
           }
-          return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray()));
-        }));
+          return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities'])
+            .pipe(map(entities => entities.toArray()));
+        })).subscribe(
+        next => subject.next(next),
+        error => subject.error(error),
+        () => subject.complete()
+      );
+    } else {
+      EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities'])
+        .pipe(map((entities: Map<number, T>): T[] => entities.toArray()))
+        .subscribe(
+          next => subject.next(next),
+          error => subject.error(error),
+          () => subject.complete()
+        );
     }
 
-    return EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities']).pipe(map((entities: Map<number, T>): T[] => entities.toArray()));
+    return subject.asObservable();
   }
 
   save(entity: T): Promise<Observable<T>> {
@@ -200,7 +214,16 @@ export class EntityManager<T extends AbstractEntity> {
         }))
         .pipe(take(1))
         .toPromise()
-        .then(transaction => resolve(EntityManager.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]])))
+        .then(transaction => {
+          const subject: BehaviorSubject<T> = new BehaviorSubject(this.entities.get(transaction.entities[0]));
+          EntityManager.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]).subscribe(
+            next => subject.next(next),
+            error => subject.error(error),
+            () => subject.complete()
+          );
+
+          resolve(subject.asObservable());
+        })
         .catch(error => reject(error));
     });
   }
