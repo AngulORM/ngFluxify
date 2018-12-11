@@ -1,5 +1,5 @@
 {
-  "name": "angular-rest",
+  "name": "ng-fluxify",
   "version": "0.0.1",
   "peerDependencies": {
     "@angular/common": "^6.1.0",
