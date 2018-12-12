@@ -1,6 +1,6 @@
 import {AbstractEntity} from '../entities';
 import {BehaviorSubject, isObservable, Observable, throwError} from 'rxjs';
-import {AngularRestModule} from '../../angular-rest.module';
+import {NgFluxifyModule} from '../../ng-fluxify.module';
 import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
@@ -20,11 +20,11 @@ export class EntityManager<T extends AbstractEntity> {
   }
 
   static get ngRedux(): NgRedux<IAppState> {
-    if (!AngularRestModule.ngRedux) {
+    if (!NgFluxifyModule.ngRedux) {
       throw new Error('NgRedux not ready yet');
     }
 
-    return AngularRestModule.ngRedux;
+    return NgFluxifyModule.ngRedux;
   }
 
   private get state(): any {
