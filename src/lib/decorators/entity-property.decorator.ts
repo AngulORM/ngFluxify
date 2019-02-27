@@ -2,7 +2,7 @@ import {PropertyDescriptor} from '../domain/descriptors';
 
 export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
-    target.constructor.properties.set(propName, propertyDescriptor);
+    target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
 
     const value = Reflect.get(target, propName);
     const enumerable = Reflect.getOwnPropertyDescriptor(target, propName) ? Reflect.getOwnPropertyDescriptor(target, propName).enumerable : false;

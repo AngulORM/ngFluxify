@@ -124,7 +124,7 @@ export class EntityManager<T extends AbstractEntity> {
       );
     }
 
-    return subject.asObservable();
+    return subject.asObservable().pipe(filter(element => !!element));
   }
 
   getAll(): Observable<T[]> {
@@ -171,13 +171,13 @@ export class EntityManager<T extends AbstractEntity> {
 
             throwError(transaction.error);
           }
-          return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray()));
-        }))
-        .subscribe(
-          next => subject.next(next),
-          error => subject.error(error),
-          () => subject.complete()
-        );
+          return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities'])
+            .pipe(map(entities => entities.toArray()));
+        })).subscribe(
+        next => subject.next(next),
+        error => subject.error(error),
+        () => subject.complete()
+      );
     } else {
       EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities'])
         .pipe(map((entities: Map<number, T>): T[] => entities.toArray()))
@@ -193,7 +193,7 @@ export class EntityManager<T extends AbstractEntity> {
 
   save(entity: T): Promise<Observable<T>> {
     const transactionId = this.transactionId;
-    if (entity.id !== -1) {
+    if (!!entity.id) {
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE),
         transactionId: transactionId
