@@ -1,6 +1,6 @@
 import {AbstractEntity} from '../entities';
 import {BehaviorSubject, isObservable, Observable, throwError} from 'rxjs';
-import {AngularRestModule} from '../../angular-rest.module';
+import {NgFluxifyModule} from '../../ng-fluxify.module';
 import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
@@ -15,16 +15,16 @@ import {TransactionState} from './transaction.state';
 export class EntityManager<T extends AbstractEntity> {
   private lastTransactionId = 0;
 
-  constructor(private entityDescriptor: EntityDescriptor) {
+  constructor(public readonly entityDescriptor: EntityDescriptor) {
 
   }
 
   static get ngRedux(): NgRedux<IAppState> {
-    if (!AngularRestModule.ngRedux) {
+    if (!NgFluxifyModule.ngRedux) {
       throw new Error('NgRedux not ready yet');
     }
 
-    return AngularRestModule.ngRedux;
+    return NgFluxifyModule.ngRedux;
   }
 
   private get state(): any {
@@ -51,10 +51,23 @@ export class EntityManager<T extends AbstractEntity> {
     return ++this.lastTransactionId;
   }
 
+  get count(): Observable<number> {
+    const subject: BehaviorSubject<number> = new BehaviorSubject(this.entities.toArray().length);
+    EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length)).subscribe(
+      next => subject.next(next),
+      error => subject.error(error),
+      () => subject.complete()
+    );
+
+    return subject.asObservable();
+  }
+
   getById(id: number): Observable<T> {
     if (!id || id < 0) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
+
+    const subject: BehaviorSubject<T> = new BehaviorSubject(this.entities.get(id));
 
     if (!this.entities.has(id) || this.isExpired(id)) {
       const transactionId = this.transactionId;
@@ -90,17 +103,28 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       }
 
-      return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
+      EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
         .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
         .pipe<T>(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error) {
             throwError(transaction.error);
           }
           return EntityManager.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
-        }));
+        }))
+        .subscribe(
+          next => subject.next(next),
+          error => subject.error(error),
+          () => subject.complete()
+        );
+    } else {
+      EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities', id]).subscribe(
+        (next: T) => subject.next(next),
+        error => subject.error(error),
+        () => subject.complete()
+      );
     }
 
-    return EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities', id]);
+    return subject.asObservable().pipe(filter(element => !!element));
   }
 
   getAll(): Observable<T[]> {
@@ -144,6 +168,7 @@ export class EntityManager<T extends AbstractEntity> {
         .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
         .pipe<T[]>(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error) {
+
             throwError(transaction.error);
           }
           return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities'])
@@ -168,7 +193,7 @@ export class EntityManager<T extends AbstractEntity> {
 
   save(entity: T): Promise<Observable<T>> {
     const transactionId = this.transactionId;
-    if (entity.id !== -1) {
+    if (!!entity.id) {
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE),
         transactionId: transactionId
@@ -228,10 +253,6 @@ export class EntityManager<T extends AbstractEntity> {
     });
   }
 
-  get count(): Observable<number> {
-    return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length));
-  }
-
   delete(entity: T): Promise<number> {
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{
@@ -260,6 +281,50 @@ export class EntityManager<T extends AbstractEntity> {
       }))
       .pipe<number>(take(1))
       .toPromise<number>();
+  }
+
+  call(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<TransactionState> {
+    const transactionId = this.transactionId;
+    EntityManager.ngRedux.dispatch(<RequestAction>{
+      type: this.actionManager.getRequestAction(action),
+      transactionId: transactionId
+    });
+
+    const serviceResponse = callable.call(this.service, ...args);
+    if (isObservable(serviceResponse)) {
+      serviceResponse.subscribe(
+        data => EntityManager.ngRedux.dispatch(<ResponseAction>{
+          type: this.actionManager.getResponseAction(action),
+          transactionId: transactionId,
+          data: data
+        }),
+        error => EntityManager.ngRedux.dispatch(<ErrorAction>{
+          type: this.actionManager.getErrorAction(action),
+          transactionId: transactionId,
+          error: error
+        }));
+    } else {
+      (<Promise<any>>serviceResponse)
+        .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
+          type: this.actionManager.getResponseAction(action),
+          transactionId: transactionId,
+          data: data
+        }))
+        .catch(error => EntityManager.ngRedux.dispatch(<ErrorAction>{
+          type: this.actionManager.getErrorAction(action),
+          transactionId: transactionId,
+          error: error
+        }));
+    }
+
+    const subject: BehaviorSubject<TransactionState> = new BehaviorSubject(this.state.get('transactions').get(transactionId));
+    EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId]).subscribe(
+      next => subject.next(next),
+      error => subject.error(error),
+      () => subject.complete()
+    );
+
+    return subject.asObservable();
   }
 
   isExpired(id: number): boolean {

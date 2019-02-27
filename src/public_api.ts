@@ -1,7 +1,7 @@
-/*
- * Public API Surface of angular-reducers
- */
-
-export * from './lib/angular-rest.service';
-export * from './lib/angular-rest.component';
-export * from './lib/angular-rest.module';
+export * from './lib/ng-fluxify.module';
+export * from './lib/services';
+export * from './lib/domain/api';
+export * from './lib/domain/descriptors';
+export * from './lib/domain/entities';
+export * from './lib/decorators';
+export * from './lib/stores';

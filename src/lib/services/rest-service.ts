@@ -2,15 +2,15 @@ import {AbstractRestEntity} from '../domain/entities';
 import {IEntityService} from './IEntity.service';
 import {RestEntityDescriptor} from '../domain/descriptors';
 import {HttpClient} from '@angular/common/http';
-import {AngularRestModule} from '../angular-rest.module';
+import {NgFluxifyModule} from '../ng-fluxify.module';
 
 export class RestService<T extends AbstractRestEntity> implements IEntityService<T> {
-  constructor(private entityDescriptor: RestEntityDescriptor) {
+  constructor(protected entityDescriptor: RestEntityDescriptor) {
 
   }
 
   get httpClient(): HttpClient {
-    return AngularRestModule.injector.get(HttpClient);
+    return NgFluxifyModule.injector.get(HttpClient);
   }
 
   public async read(id: number) {

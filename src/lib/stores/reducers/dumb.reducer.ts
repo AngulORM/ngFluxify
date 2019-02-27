@@ -1,30 +1,11 @@
 import {AbstractReducer} from '../abstract.reducer';
 import {AbstractEntity} from '../../domain/entities';
-import {EntityDescriptor} from '../../domain/descriptors';
+import {EntityDescriptor, PropertyDescriptor} from '../../domain/descriptors';
 import {AnyAction} from 'redux';
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
   constructor(private entityDescriptor: EntityDescriptor) {
     super(entityDescriptor.name);
-  }
-
-  private static parseType(model: any, value: any): any {
-    switch (typeof model) {
-      case 'number':
-        if (value === null) {
-          return null;
-        }
-        return Number(value);
-      case 'object':
-        if (model instanceof Date) {
-          return new Date(value);
-        }
-        return value;
-      case 'boolean':
-        return Boolean(Number(value) === 1);
-      default:
-        return value;
-    }
   }
 
   protected create(action: AnyAction): T | T[] {
@@ -58,10 +39,11 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
 
   private instanciateEntity(jsonObject: any): T {
     const entity: T = new this.entityDescriptor.class();
+    const properties: Map<string, PropertyDescriptor> = this.entityDescriptor.class.properties;
 
-    Object.getOwnPropertyNames(entity).forEach((element: string) => {
-      if (element in jsonObject) {
-        entity[element] = DumbReducer.parseType(entity[element], jsonObject[element]);
+    properties.forEach((value, key) => {
+      if (key in jsonObject) {
+        Reflect.set(entity, key, jsonObject[key]);
       }
     });
 
