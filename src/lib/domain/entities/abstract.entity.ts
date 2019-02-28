@@ -11,7 +11,7 @@ export abstract class AbstractEntity {
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
 
   @EntityProperty({type: Number})
-  public id;
+  public id: number;
 
   public static get properties(): Map<string, PropertyDescriptor> {
     let thisProperties = AbstractEntity._properties.get(this);

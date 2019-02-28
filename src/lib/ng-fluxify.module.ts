@@ -34,21 +34,25 @@ export class NgFluxifyModule {
     return Array.from(NgFluxifyModule.entityList.values());
   }
 
-  public static registerEntity(entityDescriptor: EntityDescriptor) {
-    NgFluxifyModule.entityList.set(entityDescriptor.name, entityDescriptor);
-
-    if (NgFluxifyModule.ngRedux) {
-      if (this.isRootStoreConfigured) {
-        this.ngRedux.configureSubStore([entityDescriptor.name], RootReducer.initEntityReducer(entityDescriptor));
-      } else {
-        this.configureStore();
-      }
-    }
+  public get entitites(): EntityDescriptor[] {
+    return NgFluxifyModule.entities;
   }
 
   private static configureStore() {
     const enhancers = [applyMiddleware(logger)];
     this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], enhancers);
     this.isRootStoreConfigured = true;
+  }
+
+  public static registerEntity(entityDescriptor: EntityDescriptor) {
+    NgFluxifyModule.entityList.set(entityDescriptor.name, entityDescriptor);
+
+    if (NgFluxifyModule.ngRedux) {
+      if (this.isRootStoreConfigured) {
+        this.ngRedux.replaceReducer(RootReducer.addReducer(entityDescriptor));
+      } else {
+        this.configureStore();
+      }
+    }
   }
 }

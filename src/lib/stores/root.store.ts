@@ -7,22 +7,27 @@ export interface IAppState {
 }
 
 export class RootReducer {
+  private static reducers: ReducersMapObject = {};
+
   public static getReducer(entityDescriptors: EntityDescriptor[]): Reducer {
     if (!entityDescriptors || !entityDescriptors.length) {
       throw new Error('At least one entity descriptor is required');
     }
 
-    const reducers: ReducersMapObject = {};
-
     entityDescriptors.forEach((entityDescriptor: EntityDescriptor) => {
-      reducers[entityDescriptor.name] = RootReducer.initEntityReducer(entityDescriptor);
+      RootReducer.reducers[entityDescriptor.name] = RootReducer.initEntityReducer(entityDescriptor);
     });
 
-    return combineReducers(reducers);
+    return combineReducers(RootReducer.reducers);
   }
 
   public static initEntityReducer(entityDescriptor: EntityDescriptor): Reducer {
     const reducer: AbstractReducer<typeof entityDescriptor.class> = new entityDescriptor.reducerType(entityDescriptor);
     return reducer.createReducer();
+  }
+
+  public static addReducer(entityDescriptor: EntityDescriptor): Reducer {
+    RootReducer.reducers[entityDescriptor.name] = RootReducer.initEntityReducer(entityDescriptor);
+    return combineReducers(RootReducer.reducers);
   }
 }
