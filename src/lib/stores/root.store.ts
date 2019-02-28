@@ -8,6 +8,10 @@ export interface IAppState {
 
 export class RootReducer {
   public static getReducer(entityDescriptors: EntityDescriptor[]): Reducer {
+    if (!entityDescriptors || !entityDescriptors.length) {
+      throw new Error('At least one entity descriptor is required');
+    }
+
     const reducers: ReducersMapObject = {};
 
     entityDescriptors.forEach((entityDescriptor: EntityDescriptor) => {
