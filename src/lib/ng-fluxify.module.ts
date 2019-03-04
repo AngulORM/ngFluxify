@@ -19,27 +19,40 @@ export class NgFluxifyModule {
   static ngRedux: NgRedux<IAppState>;
 
   private static entityList: Map<string, EntityDescriptor> = new Map<string, EntityDescriptor>();
+  private static isRootStoreConfigured: boolean;
 
-  constructor(private ngRedux: NgRedux<IAppState>, private injector: Injector) {
+  constructor(public ngRedux: NgRedux<IAppState>, private injector: Injector) {
     NgFluxifyModule.injector = injector;
     NgFluxifyModule.ngRedux = ngRedux;
 
-    NgFluxifyModule.injector = injector;
-    NgFluxifyModule.ngRedux = ngRedux;
-
-    const enhancers = [applyMiddleware(logger)];
-    ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], enhancers);
+    if (NgFluxifyModule.entities.length) {
+      NgFluxifyModule.configureStore();
+    }
   }
 
   public static get entities(): EntityDescriptor[] {
     return Array.from(NgFluxifyModule.entityList.values());
   }
 
+  public get entitites(): EntityDescriptor[] {
+    return NgFluxifyModule.entities;
+  }
+
+  private static configureStore() {
+    const enhancers = [applyMiddleware(logger)];
+    this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], enhancers);
+    this.isRootStoreConfigured = true;
+  }
+
   public static registerEntity(entityDescriptor: EntityDescriptor) {
     NgFluxifyModule.entityList.set(entityDescriptor.name, entityDescriptor);
 
     if (NgFluxifyModule.ngRedux) {
-      this.ngRedux.configureSubStore([entityDescriptor.name], RootReducer.initEntityReducer(entityDescriptor));
+      if (this.isRootStoreConfigured) {
+        this.ngRedux.replaceReducer(RootReducer.addReducer(entityDescriptor));
+      } else {
+        this.configureStore();
+      }
     }
   }
 }

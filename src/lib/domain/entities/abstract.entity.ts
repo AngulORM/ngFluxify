@@ -7,10 +7,11 @@ import {EntityProperty} from '../../decorators';
 export abstract class AbstractEntity {
   public static entityManager: EntityManager<AbstractEntity>;
   public static entityService: IEntityService<AbstractEntity>;
-  @EntityProperty({type: Number})
-  public id;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
+
+  @EntityProperty({type: Number})
+  public id: number;
 
   public static get properties(): Map<string, PropertyDescriptor> {
     let thisProperties = AbstractEntity._properties.get(this);
@@ -20,14 +21,22 @@ export abstract class AbstractEntity {
 
     if (this !== AbstractEntity) {
       const parentProperties = Object.getPrototypeOf(this).properties;
-      // @ts-ignore
       return new Map(function* () {
         yield* parentProperties;
+        // @ts-ignore
         yield* thisProperties;
       }());
     }
 
     return thisProperties;
+  }
+
+  public static addProperty(prototype: any, key: string, descriptor: PropertyDescriptor) {
+    if (!AbstractEntity._properties.has(prototype)) {
+      AbstractEntity._properties.set(prototype, new Map<string, PropertyDescriptor>());
+    }
+
+    AbstractEntity._properties.get(prototype).set(key, descriptor);
   }
 
   public get sanitized(): any {
@@ -62,13 +71,5 @@ export abstract class AbstractEntity {
 
   public delete(): Promise<number> {
     return this.constructor['entityManager'].delete(this);
-  }
-
-  public static addProperty(prototype: any, key: string, descriptor: PropertyDescriptor) {
-    if (!AbstractEntity._properties.has(prototype)) {
-      AbstractEntity._properties.set(prototype, new Map<string, PropertyDescriptor>());
-    }
-
-    AbstractEntity._properties.get(prototype).set(key, descriptor);
   }
 }
