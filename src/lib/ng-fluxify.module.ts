@@ -21,7 +21,7 @@ export class NgFluxifyModule {
   private static entityList: Map<string, EntityDescriptor> = new Map<string, EntityDescriptor>();
   private static isRootStoreConfigured: boolean;
 
-  constructor(private ngRedux: NgRedux<IAppState>, private injector: Injector) {
+  constructor(public ngRedux: NgRedux<IAppState>, private injector: Injector) {
     NgFluxifyModule.injector = injector;
     NgFluxifyModule.ngRedux = ngRedux;
 
