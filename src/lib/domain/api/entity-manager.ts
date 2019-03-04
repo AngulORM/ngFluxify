@@ -12,6 +12,7 @@ import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from '../../stores/actions';
 import {TransactionState} from './transaction.state';
 
+// @dynamic
 export class EntityManager<T extends AbstractEntity> {
   private lastTransactionId = 0;
 

@@ -1,5 +1,6 @@
 import {BaseActionsManager} from './base.action';
 
+// @dynamic
 export class ActionsManagerFactory {
   private static actionsManagers: BaseActionsManager[] = [];
 

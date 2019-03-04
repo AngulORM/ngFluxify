@@ -6,6 +6,7 @@ export interface IAppState {
   [key: string]: any;
 }
 
+// @dynamic
 export class RootReducer {
   private static reducers: ReducersMapObject = {};
 

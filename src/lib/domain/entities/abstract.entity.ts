@@ -4,6 +4,7 @@ import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
 import {EntityProperty} from '../../decorators';
 
+// @dynamic
 export abstract class AbstractEntity {
   public static entityManager: EntityManager<AbstractEntity>;
   public static entityService: IEntityService<AbstractEntity>;

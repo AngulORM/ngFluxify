@@ -14,6 +14,7 @@ const INITIAL_STATE: Map<string, any> = Map({
   transactions: Map<number, TransactionState>()
 });
 
+// @dynamic
 export abstract class AbstractReducer<T extends AbstractEntity> {
   static readonly ACTION_CREATE = ['CREATE'];
   static readonly ACTION_READ = ['READ'];

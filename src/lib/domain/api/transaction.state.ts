@@ -1,3 +1,4 @@
+// @dynamic
 export class TransactionState {
   static readonly started: string = 'STARTED';
   static readonly finished: string = 'FINISHED';

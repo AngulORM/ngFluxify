@@ -11,7 +11,7 @@ export class BaseActionsManager {
 
   /**
    * Add an action string in the array
-   * @param actionParams string[]
+   * @param actionParams
    */
   addAction(actionParams: string[]): void {
     this.actions.push(this.buildAction(actionParams));
@@ -19,7 +19,7 @@ export class BaseActionsManager {
 
   /**
    * Register request/response/error actions for request
-   * @param actionParams string[]
+   * @param actionParams
    */
   addActionSet(actionParams: string[]): void {
     this.addAction(Array.from(actionParams).concat([this.requestKey]));
@@ -30,7 +30,7 @@ export class BaseActionsManager {
   /**
    * Get existing action string
    * @param actionParams string[]
-   * @returns {undefined|string}
+   * @returns
    */
   getAction(actionParams: string[]): string {
     const actionString = this.buildAction(actionParams);
@@ -42,7 +42,7 @@ export class BaseActionsManager {
   /**
    * Get request action
    * @param actionParams
-   * @returns {undefined|string}
+   * @returns
    */
   getRequestAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.requestKey]));
@@ -51,7 +51,7 @@ export class BaseActionsManager {
   /**
    * Get response action
    * @param actionParams
-   * @returns {undefined|string}
+   * @returns
    */
   getResponseAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.responseKey]));
@@ -60,7 +60,7 @@ export class BaseActionsManager {
   /**
    * Get error action
    * @param actionParams
-   * @returns {undefined|string}
+   * @returns
    */
   getErrorAction(actionParams: string[] = []): string {
     return this.getAction(Array.from(actionParams).concat([this.errorKey]));
@@ -68,7 +68,7 @@ export class BaseActionsManager {
 
   /**
    * Return the regex pattern for actions registered
-   * @returns {string}
+   * @returns
    */
   getActionScheme(): string {
     return `^${this.reducerName.toUpperCase()}(${this.separator}[A-Z]+)+$`;
@@ -76,8 +76,8 @@ export class BaseActionsManager {
 
   /**
    * Build the action string from the parameters and the reducer name
-   * @param actionParams string[]
-   * @returns {string}
+   * @param actionParams
+   * @returns
    */
   private buildAction(actionParams: string[]): string {
     return [this.reducerName].concat(actionParams).join(this.separator).toUpperCase();

@@ -6,6 +6,7 @@ import {EntityDescriptor} from './domain/descriptors';
 import {logger} from 'redux-logger';
 import {applyMiddleware} from 'redux';
 
+// @dynamic
 @NgModule({
   imports: [
     HttpClientModule,
