@@ -1,7 +1,7 @@
 {
   "name": "ng-fluxify",
-  "version": "0.0.1",
-  "description": "Provide a full data layer, using Redux and Flux pattern. Manages application's store state for quick, easy and efficient comsuption of APIs and other data sources. Helps to focus on application features, not on data lifecycle management.",
+  "version": "0.1.2",
+  "description": "Angular library that provide easy to use and robust data layer, scalable for large projects",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AngulORM/ngFluxify.git"
