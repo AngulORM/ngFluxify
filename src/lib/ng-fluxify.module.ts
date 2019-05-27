@@ -16,6 +16,7 @@ import {applyMiddleware} from 'redux';
   exports: []
 })
 export class NgFluxifyModule {
+  static config: NgFluxifyConfig;
   static injector: Injector;
   static ngRedux: NgRedux<IAppState>;
 
@@ -31,6 +32,14 @@ export class NgFluxifyModule {
     }
   }
 
+  public static forRoot(ngFluxifyConfig: NgFluxifyConfig) {
+    NgFluxifyModule.config = ngFluxifyConfig;
+
+    return {
+      ngModule: NgFluxifyModule
+    };
+  }
+
   public static get entities(): EntityDescriptor[] {
     return Array.from(NgFluxifyModule.entityList.values());
   }
@@ -40,7 +49,12 @@ export class NgFluxifyModule {
   }
 
   private static configureStore() {
-    const enhancers = [applyMiddleware(logger)];
+    const enhancers = [];
+
+    if (NgFluxifyModule.config && NgFluxifyModule.config.enableStoreLogger) {
+      enhancers.push(applyMiddleware(logger));
+    }
+
     this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], enhancers);
     this.isRootStoreConfigured = true;
   }
@@ -56,4 +70,8 @@ export class NgFluxifyModule {
       }
     }
   }
+}
+
+export interface NgFluxifyConfig {
+  enableStoreLogger?: boolean;
 }

@@ -5,6 +5,7 @@ export class TransactionState {
   static readonly error: string = 'ERROR';
 
   state: string;
+  action: string;
   error?: Error;
   entities?: number[];
 }

@@ -89,7 +89,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected startTransaction(action: RequestAction, state: Map<string, any>): Map<string, any> {
     return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
       action.transactionId,
-      {state: TransactionState.started}
+      {state: TransactionState.started, action: action.type}
     ));
   }
 
@@ -105,14 +105,14 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
     return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
       action.transactionId,
-      {state: TransactionState.finished, entities: entitiesId}
+      {state: TransactionState.finished, action: action.type, entities: entitiesId}
     ));
   }
 
   protected errorTransaction(action: ErrorAction, state: Map<string, any>): Map<string, any> {
     return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
       action.transactionId,
-      {state: TransactionState.error, error: action.error}
+      {state: TransactionState.error, action: action.type, error: action.error}
     ));
   }
 

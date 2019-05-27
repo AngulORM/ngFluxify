@@ -15,6 +15,7 @@ import {TransactionState} from './transaction.state';
 // @dynamic
 export class EntityManager<T extends AbstractEntity> {
   private lastTransactionId = 0;
+  private lastReadAllTransactionId: number;
 
   constructor(public readonly entityDescriptor: EntityDescriptor) {
 
@@ -38,6 +39,10 @@ export class EntityManager<T extends AbstractEntity> {
 
   private get isComplete(): Boolean {
     return this.state.get('isComplete');
+  }
+
+  private get transactions(): Map<number, TransactionState> {
+    return this.state.get('transactions');
   }
 
   private get service(): IEntityService<T> {
@@ -70,7 +75,7 @@ export class EntityManager<T extends AbstractEntity> {
 
     const subject: BehaviorSubject<T> = new BehaviorSubject(this.entities.get(id));
 
-    if (!this.entities.has(id) || this.isExpired(id)) {
+    if ((!this.entities.has(id) || this.isExpired(id)) && (!this.lastReadAllTransactionId || this.transactions.get(this.lastReadAllTransactionId).state !== TransactionState.started)) {
       const transactionId = this.transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
@@ -133,6 +138,7 @@ export class EntityManager<T extends AbstractEntity> {
 
     if (!this.isComplete) {
       const transactionId = this.transactionId;
+      this.lastReadAllTransactionId = transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
         transactionId: transactionId
