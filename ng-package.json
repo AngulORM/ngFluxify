@@ -5,7 +5,8 @@
   "whitelistedNonPeerDependencies": [
     "angular",
     "redux",
-    "rxjs"
+    "rxjs",
+    "immutable"
   ],
   "lib": {
     "entryFile": "src/public_api.ts"

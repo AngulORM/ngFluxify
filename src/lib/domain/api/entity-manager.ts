@@ -5,7 +5,7 @@ import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
 import {Map} from 'immutable';
-import {IEntityService} from '../../services';
+import {IEntityService, NgReduxService} from '../../services';
 import {filter, map, mergeMap, take} from 'rxjs/operators';
 import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
@@ -21,7 +21,15 @@ export class EntityManager<T extends AbstractEntity> {
 
   }
 
+  static get isReady(): boolean {
+    return !!NgFluxifyModule.injector.get<NgReduxService>(NgReduxService, null);
+  }
+
   static get ngRedux(): NgRedux<IAppState> {
+    if (!this.isReady) {
+      throw new Error('NgReduxService not ready yet');
+    }
+
     if (!NgFluxifyModule.ngRedux) {
       throw new Error('NgRedux not ready yet');
     }
