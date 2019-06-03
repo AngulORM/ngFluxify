@@ -1,10 +1,12 @@
-import {Injector, NgModule} from '@angular/core';
+import {InjectionToken, Injector, ModuleWithProviders, NgModule} from '@angular/core';
 import {NgRedux, NgReduxModule} from '@angular-redux/store';
 import {IAppState, RootReducer} from './stores';
 import {HttpClientModule} from '@angular/common/http';
 import {EntityDescriptor} from './domain/descriptors';
 import {logger} from 'redux-logger';
 import {applyMiddleware} from 'redux';
+
+const NgFluxifyConfigService = new InjectionToken<NgFluxifyConfig>('NgFluxifyConfigService');
 
 // @dynamic
 @NgModule({
@@ -16,9 +18,22 @@ import {applyMiddleware} from 'redux';
   exports: []
 })
 export class NgFluxifyModule {
-  static config: NgFluxifyConfig;
   static injector: Injector;
   static ngRedux: NgRedux<IAppState>;
+
+  static get ngFluxifyConfigService(): Promise<NgFluxifyConfig> {
+    return new Promise<NgFluxifyConfig>(resolve => {
+      const interval = setInterval(() => {
+        console.log(this.injector.get(NgFluxifyConfigService, false));
+        if (this.injector.get(NgFluxifyConfigService, false)) {
+          if (interval) {
+            clearInterval(interval);
+          }
+          resolve(this.injector.get(NgFluxifyConfigService, {}));
+        }
+      }, 5);
+    });
+  }
 
   private static entityList: Map<string, EntityDescriptor> = new Map<string, EntityDescriptor>();
   private static isRootStoreConfigured: boolean;
@@ -32,11 +47,15 @@ export class NgFluxifyModule {
     }
   }
 
-  public static forRoot(ngFluxifyConfig: NgFluxifyConfig) {
-    NgFluxifyModule.config = ngFluxifyConfig;
-
+  public static initialize(ngFluxifyConfig: NgFluxifyConfig): ModuleWithProviders<NgFluxifyModule> {
     return {
-      ngModule: NgFluxifyModule
+      ngModule: NgFluxifyModule,
+      providers: [
+        {
+          provide: NgFluxifyConfigService,
+          useValue: ngFluxifyConfig
+        }
+      ]
     };
   }
 
@@ -49,13 +68,17 @@ export class NgFluxifyModule {
   }
 
   private static configureStore() {
-    const enhancers = [];
+    this.ngFluxifyConfigService.then(ngFluxifyConfig => {
+      const enhancers = [];
 
-    if (NgFluxifyModule.config && NgFluxifyModule.config.enableStoreLogger) {
-      enhancers.push(applyMiddleware(logger));
-    }
+      if (ngFluxifyConfig.enableStoreLogger) {
+        enhancers.push(applyMiddleware(logger));
+      }
 
-    this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], enhancers);
+      this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], []);
+    });
+
+    this.ngRedux.configureStore(RootReducer.getReducer(NgFluxifyModule.entities), {}, [], []);
     this.isRootStoreConfigured = true;
   }
 
