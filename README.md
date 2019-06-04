@@ -43,8 +43,8 @@ export class ArticleEntity extends AbstractEntity {
 **Step 2 - Get data**
 
 ~~~~
-ArticleEntity.readAll(); // Observable<ArticleEntity[]>
-ArticleEntity.read(1); // Observable<ArticleEntity>
+ArticleEntity.readAll<ArticleEntity>(); // Observable<ArticleEntity[]>
+ArticleEntity.read<ArticleEntity>(1); // Observable<ArticleEntity>
 ~~~~
 
 **Step 3 - Add new entity**

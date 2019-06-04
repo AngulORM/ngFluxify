@@ -6,10 +6,8 @@ import {EntityProperty} from '../../decorators';
 
 // @dynamic
 export abstract class AbstractEntity {
-  // @ts-ignore
-  public static entityManager: EntityManager<this>;
-  // @ts-ignore
-  public static entityService: IEntityService<this>;
+  public static entityManager: EntityManager<AbstractEntity>;
+  public static entityService: IEntityService<AbstractEntity>;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
 
@@ -53,11 +51,11 @@ export abstract class AbstractEntity {
   }
 
   public static read<T extends AbstractEntity = AbstractEntity>(id: number): Observable<T> {
-    return this.entityManager.getById(id);
+    return <Observable<T>>this.entityManager.getById(id);
   }
 
   public static readAll<T extends AbstractEntity = AbstractEntity>(): Observable<T[]> {
-    return this.entityManager.getAll();
+    return <Observable<T[]>>this.entityManager.getAll();
   }
 
   public static get count(): Observable<number> {
