@@ -49,7 +49,7 @@ export class NgFluxifyModule {
   public static registerEntity(entityDescriptor: EntityDescriptor) {
     NgFluxifyModule.entityList.set(entityDescriptor.name, entityDescriptor);
 
-    if (this.injector.get<NgReduxService>(NgReduxService, null)) {
+    if (this.injector && this.injector.get<NgReduxService>(NgReduxService, null)) {
       this.injector.get<NgReduxService>(NgReduxService).registerEntity(entityDescriptor);
     }
   }

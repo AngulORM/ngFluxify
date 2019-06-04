@@ -6,8 +6,10 @@ import {EntityProperty} from '../../decorators';
 
 // @dynamic
 export abstract class AbstractEntity {
-  public static entityManager: EntityManager<AbstractEntity>;
-  public static entityService: IEntityService<AbstractEntity>;
+  // @ts-ignore
+  public static entityManager: EntityManager<this>;
+  // @ts-ignore
+  public static entityService: IEntityService<this>;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
 
@@ -50,11 +52,11 @@ export abstract class AbstractEntity {
     return sanitized;
   }
 
-  public static read(id: number): Observable<AbstractEntity> {
+  public static read<T extends AbstractEntity = AbstractEntity>(id: number): Observable<T> {
     return this.entityManager.getById(id);
   }
 
-  public static readAll(): Observable<AbstractEntity[]> {
+  public static readAll<T extends AbstractEntity = AbstractEntity>(): Observable<T[]> {
     return this.entityManager.getAll();
   }
 
@@ -66,7 +68,7 @@ export abstract class AbstractEntity {
     return this.constructor['read'](this.id);
   }
 
-  public save(): Promise<Observable<AbstractEntity>> {
+  public save<T extends AbstractEntity = AbstractEntity>(): Promise<Observable<T>> {
     return this.constructor['entityManager'].save(this);
   }
 
