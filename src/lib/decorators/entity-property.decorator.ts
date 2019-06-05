@@ -20,11 +20,13 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       };
 
       const setter = function (newVal) {
-        try {
-          propertyDescriptor.type.prototype.valueOf();
-          newVal = propertyDescriptor.type(newVal);
-        } catch {
-          newVal = new propertyDescriptor.type(newVal);
+        if (newVal) {
+          try {
+            propertyDescriptor.type.prototype.valueOf();
+            newVal = propertyDescriptor.type(newVal);
+          } catch {
+            newVal = new propertyDescriptor.type(newVal);
+          }
         }
 
         Reflect.set(this, `_${propName}`, newVal);

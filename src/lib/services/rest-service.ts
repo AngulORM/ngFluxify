@@ -22,7 +22,7 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
   }
 
   public async create(entity: T) {
-    return this.httpClient.post(this.entityDescriptor.route, entity).toPromise();
+    return this.httpClient.post(this.entityDescriptor.route, entity.sanitized).toPromise();
   }
 
   public async update(entity: T) {
