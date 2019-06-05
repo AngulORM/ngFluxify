@@ -26,7 +26,7 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
   }
 
   public async update(entity: T) {
-    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.id}`, entity).toPromise();
+    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.id}`, entity.sanitized).toPromise();
   }
 
   public async delete(id: number) {
