@@ -83,7 +83,7 @@ export class EntityManager<T extends AbstractEntity> {
 
     const subject: BehaviorSubject<T> = new BehaviorSubject(this.entities.get(id));
 
-    if ((!this.entities.has(id) || this.isExpired(id)) && (!this.lastReadAllTransactionId || this.transactions.get(this.lastReadAllTransactionId).state !== TransactionState.started)) {
+    if ((!this.entities.has(id) || this.isExpired(id)) && (!this.lastReadAllTransactionId || !this.transactions.get(this.lastReadAllTransactionId) || this.transactions.get(this.lastReadAllTransactionId).state !== TransactionState.started)) {
       const transactionId = this.transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),

@@ -1,11 +1,12 @@
 import {Map} from 'immutable';
 import {AnyAction, Reducer} from 'redux';
+import {isNumber} from 'util';
+
 import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
-import {TransactionState} from '../domain/api';
-import {isNumber} from 'util';
+import {TransactionState} from '../domain/api/transaction.state';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',

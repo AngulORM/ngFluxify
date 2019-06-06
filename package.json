@@ -1,6 +1,6 @@
 {
   "name": "ng-fluxify",
-  "version": "0.2.6",
+  "version": "0.2.8",
   "description": "Angular library that provide easy to use and robust data layer, scalable for large projects",
   "repository": {
     "type": "git",

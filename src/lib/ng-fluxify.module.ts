@@ -1,9 +1,12 @@
 import {Injector, ModuleWithProviders, NgModule} from '@angular/core';
 import {NgRedux, NgReduxModule} from '@angular-redux/store';
 import {HttpClientModule} from '@angular/common/http';
+
 import {EntityDescriptor} from './domain/descriptors';
-import {IAppState} from './stores';
-import {NgFluxifyConfig, NgFluxifyConfigService, NgReduxService} from './services';
+import {IAppState} from './stores/root.store';
+import {NgReduxService} from './services/ng-redux.service';
+import {NgFluxifyConfig, NgFluxifyConfigService} from './services/ng-fluxify-config.service';
+
 
 // @dynamic
 @NgModule({
@@ -18,8 +21,6 @@ import {NgFluxifyConfig, NgFluxifyConfigService, NgReduxService} from './service
 export class NgFluxifyModule {
   static injector: Injector;
   static ngRedux: NgRedux<IAppState>;
-
-  private static entityList: Map<string, EntityDescriptor> = new Map<string, EntityDescriptor>();
 
   constructor(public ngRedux: NgRedux<IAppState>, private injector: Injector) {
     NgFluxifyModule.injector = injector;
@@ -39,18 +40,10 @@ export class NgFluxifyModule {
   }
 
   public static get entities(): EntityDescriptor[] {
-    return Array.from(NgFluxifyModule.entityList.values());
+    return NgReduxService.entities;
   }
 
   public get entities(): EntityDescriptor[] {
     return NgFluxifyModule.entities;
-  }
-
-  public static registerEntity(entityDescriptor: EntityDescriptor) {
-    NgFluxifyModule.entityList.set(entityDescriptor.name, entityDescriptor);
-
-    if (this.injector && this.injector.get<NgReduxService>(NgReduxService, null)) {
-      this.injector.get<NgReduxService>(NgReduxService).registerEntity(entityDescriptor);
-    }
   }
 }
