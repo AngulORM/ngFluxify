@@ -1,16 +1,16 @@
 import {Map} from 'immutable';
 import {AnyAction, Reducer} from 'redux';
-import {isNumber} from 'util';
 
 import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
 import {TransactionState} from '../domain/api/transaction.state';
+import {isObject} from 'rxjs/internal-compatibility';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
-  entities: Map<number, AbstractEntity>(),
+  entities: Map<any, AbstractEntity>(),
   isComplete: false,
   transactions: Map<number, TransactionState>()
 });
@@ -94,14 +94,14 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     ));
   }
 
-  protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: T | T[] | number | number[]): Map<string, any> {
+  protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: T | T[] | any | any[]): Map<string, any> {
     const entitiesId = [];
     if (Array.isArray(entities)) {
       for (const entity of entities) {
-        entitiesId.push(isNumber(entity) ? entity : (<T>entity).id);
+        entitiesId.push(isObject(entity) ? (<T>entity).primary : entity);
       }
     } else {
-      entitiesId.push(isNumber(entities) ? entities : (<T>entities).id);
+      entitiesId.push(isObject(entities) ? (<T>entities).primary : entities);
     }
 
     return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
@@ -130,12 +130,12 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   }
 
   protected setEntity(state: Map<string, any>, entity: T): Map<string, any> {
-    return state.set('entities', (<Map<number, T>>state.get('entities')).set(entity.id, entity));
+    return state.set('entities', (<Map<any, T>>state.get('entities')).set(entity.primary, entity));
   }
 
-  protected removeEntities(state: Map<string, any>, ids: number | number[]): Map<string, any> {
+  protected removeEntities(state: Map<string, any>, ids: any | any[]): Map<string, any> {
     if (Array.isArray(ids)) {
-      ids.forEach((id: number): void => {
+      ids.forEach((id: any): void => {
         state = this.removeEntity(state, id);
       });
     } else {
@@ -145,8 +145,8 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     return state;
   }
 
-  protected removeEntity(state: Map<string, any>, id: number): Map<string, any> {
-    return state.set('entities', (<Map<number, T>>state.get('entities')).remove(id));
+  protected removeEntity(state: Map<string, any>, id: any): Map<string, any> {
+    return state.set('entities', (<Map<any, T>>state.get('entities')).remove(id));
   }
 
   protected handleCustomActions(state: Map<string, any>, action: AnyAction): Map<string, any> {
@@ -159,5 +159,5 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   protected abstract update(action: AnyAction): T | T[];
 
-  protected abstract delete(action: AnyAction): number | number[];
+  protected abstract delete(action: AnyAction): any | any[];
 }

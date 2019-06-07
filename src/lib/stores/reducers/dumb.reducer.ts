@@ -33,7 +33,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     }
   }
 
-  protected delete(action: AnyAction): number | number[] {
+  protected delete(action: AnyAction): any | any[] {
     return action.data;
   }
 

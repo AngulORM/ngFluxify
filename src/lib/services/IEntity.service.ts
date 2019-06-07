@@ -2,7 +2,7 @@ import {AbstractEntity} from '../domain/entities';
 import {Observable} from 'rxjs';
 
 export interface IEntityService<T extends AbstractEntity> {
-  read(id: number): Promise<any> | Observable<any>;
+  read(id: any): Promise<any> | Observable<any>;
 
   readAll(): Promise<any> | Observable<any>;
 
@@ -10,5 +10,5 @@ export interface IEntityService<T extends AbstractEntity> {
 
   update(entity: T): Promise<any>;
 
-  delete(id: number): Promise<any>;
+  delete(id: any): Promise<any>;
 }

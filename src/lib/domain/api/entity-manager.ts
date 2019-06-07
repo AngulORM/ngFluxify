@@ -41,7 +41,7 @@ export class EntityManager<T extends AbstractEntity> {
     return EntityManager.ngRedux.getState()[this.entityDescriptor.name];
   }
 
-  private get entities(): Map<number, T> {
+  private get entities(): Map<any, T> {
     return this.state.get('entities');
   }
 
@@ -76,8 +76,8 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
-  getById(id: number): Observable<T> {
-    if (!id || id < 0) {
+  getById(id: any): Observable<T> {
+    if (!id) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
 
@@ -186,7 +186,7 @@ export class EntityManager<T extends AbstractEntity> {
 
             throwError(transaction.error);
           }
-          return EntityManager.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities'])
+          return EntityManager.ngRedux.select<Map<any, T>>([this.entityDescriptor.name, 'entities'])
             .pipe(map(entities => entities.toArray()));
         })).subscribe(
         next => subject.next(next),
@@ -195,7 +195,7 @@ export class EntityManager<T extends AbstractEntity> {
       );
     } else {
       EntityManager.ngRedux.select([this.entityDescriptor.name, 'entities'])
-        .pipe(map((entities: Map<number, T>): T[] => entities.toArray()))
+        .pipe(map((entities: Map<any, T>): T[] => entities.toArray()))
         .subscribe(
           next => subject.next(next),
           error => subject.error(error),
@@ -208,7 +208,7 @@ export class EntityManager<T extends AbstractEntity> {
 
   save(entity: T): Promise<Observable<T>> {
     const transactionId = this.transactionId;
-    if (!!entity.id) {
+    if (!!entity.primary) {
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE),
         transactionId: transactionId
@@ -268,17 +268,17 @@ export class EntityManager<T extends AbstractEntity> {
     });
   }
 
-  delete(entity: T): Promise<number> {
+  delete(entity: T): Promise<any> {
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE),
       transactionId: transactionId
     });
-    this.service.delete(entity.id)
+    this.service.delete(entity.primary)
       .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
         type: this.actionManager.getResponseAction(AbstractReducer.ACTION_DELETE),
         transactionId: transactionId,
-        data: entity.id
+        data: entity.primary
       }))
       .catch(error => EntityManager.ngRedux.dispatch(<ErrorAction>{
         type: this.actionManager.getErrorAction(AbstractReducer.ACTION_DELETE),
@@ -288,14 +288,14 @@ export class EntityManager<T extends AbstractEntity> {
 
     return EntityManager.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
       .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe<number>(map((transaction: TransactionState): number => {
+      .pipe<any>(map((transaction: TransactionState): any => {
         if (transaction.state === TransactionState.error) {
           throwError(transaction.error);
         }
         return transaction.entities[0];
       }))
-      .pipe<number>(take(1))
-      .toPromise<number>();
+      .pipe<any>(take(1))
+      .toPromise<any>();
   }
 
   call(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<TransactionState> {
@@ -342,7 +342,7 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
-  isExpired(id: number): boolean {
+  isExpired(id: any): boolean {
     return false;
   }
 }

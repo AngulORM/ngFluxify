@@ -7,5 +7,5 @@ export class TransactionState {
   state: string;
   action: string;
   error?: Error;
-  entities?: number[];
+  entities?: any[];
 }

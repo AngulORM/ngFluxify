@@ -2,7 +2,6 @@ import {EntityManager} from '../api';
 import {PropertyDescriptor} from '../descriptors';
 import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
-import {EntityProperty} from '../../decorators';
 
 // @dynamic
 export abstract class AbstractEntity {
@@ -10,9 +9,6 @@ export abstract class AbstractEntity {
   public static entityService: IEntityService<AbstractEntity>;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
-
-  @EntityProperty({type: Number})
-  public id: number;
 
   public static get properties(): Map<string, PropertyDescriptor> {
     let thisProperties = AbstractEntity._properties.get(this);
@@ -32,12 +28,25 @@ export abstract class AbstractEntity {
     return thisProperties;
   }
 
+  public static get primaryKey(): [string, PropertyDescriptor] {
+    return Array.from(this.properties.entries()).find(property => property[1].primary);
+  }
+
   public static addProperty(prototype: any, key: string, descriptor: PropertyDescriptor) {
     if (!AbstractEntity._properties.has(prototype)) {
       AbstractEntity._properties.set(prototype, new Map<string, PropertyDescriptor>());
     }
 
     AbstractEntity._properties.get(prototype).set(key, descriptor);
+  }
+
+  public get primary(): any {
+    const primaryKey: [string, PropertyDescriptor] = this.constructor['primaryKey'];
+    if (!primaryKey) {
+      return;
+    }
+
+    return this[primaryKey[0]];
   }
 
   public get sanitized(): any {
@@ -50,7 +59,7 @@ export abstract class AbstractEntity {
     return sanitized;
   }
 
-  public static read<T extends AbstractEntity = AbstractEntity>(id: number): Observable<T> {
+  public static read<T extends AbstractEntity = AbstractEntity>(id: any): Observable<T> {
     return <Observable<T>>this.entityManager.getById(id);
   }
 
@@ -63,7 +72,7 @@ export abstract class AbstractEntity {
   }
 
   public read(): void {
-    return this.constructor['read'](this.id);
+    return this.constructor['read'](this.primary);
   }
 
   public save<T extends AbstractEntity = AbstractEntity>(): Promise<Observable<T>> {

@@ -13,7 +13,7 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
     return NgFluxifyModule.injector.get(HttpClient);
   }
 
-  public async read(id: number) {
+  public async read(id: any): Promise<any> {
     return this.httpClient.get(`${this.entityDescriptor.route}/${id}`).toPromise();
   }
 
@@ -26,10 +26,10 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
   }
 
   public async update(entity: T) {
-    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.id}`, entity.sanitized).toPromise();
+    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.primary}`, entity.sanitized).toPromise();
   }
 
-  public async delete(id: number) {
+  public async delete(id: any): Promise<any> {
     return this.httpClient.delete(`${this.entityDescriptor.route}/${id}`).toPromise();
   }
 }
