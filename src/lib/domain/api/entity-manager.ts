@@ -11,6 +11,7 @@ import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from '../../stores/actions';
 import {TransactionState} from './transaction.state';
+import {MethodNotAllowedError} from '../errors';
 
 // @dynamic
 export class EntityManager<T extends AbstractEntity> {
@@ -76,7 +77,16 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
+  /**
+   * @param id
+   * @throws MethodNotAllowedError
+   * @throws Error
+   */
   getById(id: any): Observable<T> {
+    if (!this.entityDescriptor.canRead) {
+      throw new MethodNotAllowedError('This entity does not provide getById');
+    }
+
     if (!id) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
@@ -141,7 +151,14 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable().pipe(filter(element => !!element));
   }
 
+  /**
+   * @throws MethodNotAllowedError
+   */
   getAll(): Observable<T[]> {
+    if (!this.entityDescriptor.canReadAll) {
+      throw new MethodNotAllowedError('This entity does not provide getAll');
+    }
+
     const subject: BehaviorSubject<T[]> = new BehaviorSubject(this.entities.toArray());
 
     if (!this.isComplete) {
@@ -206,9 +223,17 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
+  /**
+   * @param entity
+   * @throws MethodNotAllowedError
+   */
   save(entity: T): Promise<Observable<T>> {
     const transactionId = this.transactionId;
     if (!!entity.primary) {
+      if (!this.entityDescriptor.canUpdate) {
+        throw new MethodNotAllowedError('This entity does not provide update');
+      }
+
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE),
         transactionId: transactionId
@@ -225,6 +250,10 @@ export class EntityManager<T extends AbstractEntity> {
           error: error
         }));
     } else {
+      if (!this.entityDescriptor.canCreate) {
+        throw new MethodNotAllowedError('This entity does not provide create');
+      }
+
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_CREATE),
         transactionId: transactionId
@@ -268,7 +297,15 @@ export class EntityManager<T extends AbstractEntity> {
     });
   }
 
+  /**
+   * @param entity
+   * @throws MethodNotAllowedError
+   */
   delete(entity: T): Promise<any> {
+    if (!this.entityDescriptor.canDelete) {
+      throw new MethodNotAllowedError('This entity does not provide delete');
+    }
+
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE),

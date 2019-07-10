@@ -30,7 +30,10 @@ export class AppModule {}
 **Step 1 - Write your entity**
 
 ~~~~
-@Entity<RestEntityDescriptor>(new RestEntityDescriptor('Article', 'https://my-wonderful-api.dev/articles'))
+@Entity<RestEntityDescriptor>(new RestEntityDescriptor({
+  name: 'Article', 
+  route: 'https://my-wonderful-api.dev/articles'
+}))
 export class ArticleEntity extends AbstractEntity {
   @EntityProperty({type: Number, primary: true})
   public id: number;

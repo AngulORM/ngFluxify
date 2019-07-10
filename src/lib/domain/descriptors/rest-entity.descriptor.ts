@@ -1,4 +1,4 @@
-import {EntityDescriptor} from './entity.descriptor';
+import {EntityDescriptor, EntityDescriptorAttributes} from './entity.descriptor';
 import {DumbReducer} from '../../stores';
 import {RestService} from '../../services';
 
@@ -7,8 +7,12 @@ export class RestEntityDescriptor extends EntityDescriptor {
   readonly serviceType: any = RestService;
   route: string;
 
-  constructor(_name: string, _route: string) {
-    super(_name);
-    this.route = _route;
+  constructor(attributes: RestEntityDescriptorAttributes) {
+    super(attributes);
+    this.route = attributes.route;
   }
+}
+
+export interface RestEntityDescriptorAttributes extends EntityDescriptorAttributes {
+  route: string;
 }
