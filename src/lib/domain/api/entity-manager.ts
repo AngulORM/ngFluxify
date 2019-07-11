@@ -83,10 +83,6 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws Error
    */
   getById(id: any): Observable<T> {
-    if (!this.entityDescriptor.canRead) {
-      throw new MethodNotAllowedError('This entity does not provide getById');
-    }
-
     if (!id) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
@@ -94,6 +90,10 @@ export class EntityManager<T extends AbstractEntity> {
     const subject: BehaviorSubject<T> = new BehaviorSubject(this.entities.get(id));
 
     if ((!this.entities.has(id) || this.isExpired(id)) && (!this.lastReadAllTransactionId || !this.transactions.get(this.lastReadAllTransactionId) || this.transactions.get(this.lastReadAllTransactionId).state !== TransactionState.started)) {
+      if (!this.entityDescriptor.canRead) {
+        throw new MethodNotAllowedError('This entity does not provide getById');
+      }
+
       const transactionId = this.transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
@@ -155,13 +155,13 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws MethodNotAllowedError
    */
   getAll(): Observable<T[]> {
-    if (!this.entityDescriptor.canReadAll) {
-      throw new MethodNotAllowedError('This entity does not provide getAll');
-    }
-
     const subject: BehaviorSubject<T[]> = new BehaviorSubject(this.entities.toArray());
 
     if (!this.isComplete) {
+      if (!this.entityDescriptor.canReadAll) {
+        throw new MethodNotAllowedError('This entity does not provide getAll');
+      }
+
       const transactionId = this.transactionId;
       this.lastReadAllTransactionId = transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
