@@ -1,17 +1,14 @@
 import {Injector, ModuleWithProviders, NgModule} from '@angular/core';
 import {NgRedux, NgReduxModule} from '@angular-redux/store';
-import {HttpClientModule} from '@angular/common/http';
 
 import {EntityDescriptor} from './domain/descriptors';
 import {IAppState} from './stores/root.store';
 import {NgReduxService} from './services/ng-redux.service';
 import {NgFluxifyConfig, NgFluxifyConfigService} from './services/ng-fluxify-config.service';
 
-
 // @dynamic
 @NgModule({
   imports: [
-    HttpClientModule,
     NgReduxModule
   ],
   declarations: [],
