@@ -379,7 +379,26 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
+  callAndSelect<K>(action: string[], selector: string, defaultValue: K, callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<K> {
+    const subject = new BehaviorSubject<K>(this.state.get(selector, defaultValue));
+
+    this.call(action, callable, ...args)
+      .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
+      .pipe<K>(mergeMap((transaction: TransactionState) => {
+        if (transaction.state === TransactionState.error) {
+          throwError(transaction.error);
+        }
+        return EntityManager.ngRedux.select<K>([this.entityDescriptor.name, selector]);
+      })).subscribe(
+      next => subject.next(next),
+      error => subject.error(error),
+      () => subject.complete()
+    );
+
+    return subject.asObservable();
+  }
+
   isExpired(id: any): boolean {
-    return false;
+    return this.entityDescriptor.expirationDetectionStrategy(id);
   }
 }
