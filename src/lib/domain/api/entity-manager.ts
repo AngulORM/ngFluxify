@@ -419,6 +419,10 @@ export class EntityManager<T extends AbstractEntity> {
       .toPromise();
   }
 
+  reset() {
+    EntityManager.ngRedux.dispatch(<RequestAction>{type: this.actionManager.getAction(AbstractReducer.ACTION_RESET)});
+  }
+
   isExpired(id: any): boolean {
     return this.entityDescriptor.expirationDetectionStrategy(id);
   }

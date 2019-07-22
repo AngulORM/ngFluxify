@@ -21,6 +21,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   static readonly ACTION_READ = ['READ'];
   static readonly ACTION_UPDATE = ['UPDATE'];
   static readonly ACTION_DELETE = ['DELETE'];
+  static readonly ACTION_RESET = ['RESET'];
 
   private state: Map<string, any> = INITIAL_STATE;
   protected readonly actionsManager: BaseActionsManager;
@@ -32,6 +33,8 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     this.actionsManager.addActionSet(AbstractReducer.ACTION_READ);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_UPDATE);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_DELETE);
+
+    this.actionsManager.addAction(AbstractReducer.ACTION_RESET);
   }
 
   public createReducer(): Reducer<any> {
@@ -72,6 +75,9 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
             const entitiesDeleted = this.delete(action);
             state = this.removeEntities(state, entitiesDeleted);
             state = this.finishTransaction(<ResponseAction>action, state, entitiesDeleted);
+            break;
+          case this.actionsManager.getAction(AbstractReducer.ACTION_RESET):
+            state = INITIAL_STATE;
             break;
           default:
             state = this.handleCustomActions(state, action);
