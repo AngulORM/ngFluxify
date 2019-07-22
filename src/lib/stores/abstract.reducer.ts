@@ -5,7 +5,7 @@ import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
-import {TransactionState} from '../domain/api/transaction.state';
+import {TransactionState} from '../domain/api/transaction.state'; // Do not change, solve circular dependencies
 import {isObject} from 'rxjs/internal-compatibility';
 
 const INITIAL_STATE: Map<string, any> = Map({
@@ -90,7 +90,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected startTransaction(action: RequestAction, state: Map<string, any>): Map<string, any> {
     return state.set('transactions', (<Map<number, TransactionState>>state.get('transactions')).set(
       action.transactionId,
-      {state: TransactionState.started, action: action.type}
+      {state: TransactionState.started, action: action.type, arguments: action.arguments}
     ));
   }
 

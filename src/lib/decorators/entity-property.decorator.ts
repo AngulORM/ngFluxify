@@ -20,12 +20,24 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       };
 
       const setter = function (newVal) {
-        if (newVal) {
+        const create = (val) => {
           try {
             propertyDescriptor.type.prototype.valueOf();
-            newVal = propertyDescriptor.type(newVal);
+            return propertyDescriptor.type(val);
           } catch {
-            newVal = new propertyDescriptor.type(newVal);
+            return new propertyDescriptor.type(val);
+          }
+        };
+
+        if (newVal) {
+          if (propertyDescriptor.enumerable) {
+            if (Array.isArray(newVal)) {
+              newVal = newVal.map(el => create(el));
+            } else {
+              newVal = [];
+            }
+          } else {
+            newVal = create(newVal);
           }
         }
 

@@ -97,7 +97,8 @@ export class EntityManager<T extends AbstractEntity> {
       const transactionId = this.transactionId;
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
-        transactionId: transactionId
+        transactionId: transactionId,
+        arguments: [id]
       });
 
       const serviceResponse = this.service.read(id);
@@ -236,7 +237,8 @@ export class EntityManager<T extends AbstractEntity> {
 
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_UPDATE),
-        transactionId: transactionId
+        transactionId: transactionId,
+        arguments: [entity]
       });
       this.service.update(entity)
         .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
@@ -256,7 +258,8 @@ export class EntityManager<T extends AbstractEntity> {
 
       EntityManager.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_CREATE),
-        transactionId: transactionId
+        transactionId: transactionId,
+        arguments: [entity]
       });
       this.service.create(entity)
         .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
@@ -309,7 +312,8 @@ export class EntityManager<T extends AbstractEntity> {
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE),
-      transactionId: transactionId
+      transactionId: transactionId,
+      arguments: [entity.primary]
     });
     this.service.delete(entity.primary)
       .then(data => EntityManager.ngRedux.dispatch(<ResponseAction>{
@@ -339,7 +343,8 @@ export class EntityManager<T extends AbstractEntity> {
     const transactionId = this.transactionId;
     EntityManager.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(action),
-      transactionId: transactionId
+      transactionId: transactionId,
+      arguments: args
     });
 
     const serviceResponse = callable.call(this.service, ...args);
@@ -379,8 +384,12 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
-  callAndSelect<K>(action: string[], selector: string, defaultValue: K, callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<K> {
-    const subject = new BehaviorSubject<K>(this.state.get(selector, defaultValue));
+  callAndSelect<K>(action: string[], selector: any | any[], defaultValue: K, callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<K> {
+    if (!Array.isArray(selector)) {
+      selector = [selector];
+    }
+
+    const subject = new BehaviorSubject<K>(this.state.getIn(selector, defaultValue));
 
     this.call(action, callable, ...args)
       .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
@@ -388,7 +397,7 @@ export class EntityManager<T extends AbstractEntity> {
         if (transaction.state === TransactionState.error) {
           throwError(transaction.error);
         }
-        return EntityManager.ngRedux.select<K>([this.entityDescriptor.name, selector]);
+        return EntityManager.ngRedux.select<K>([this.entityDescriptor.name, ...selector]);
       })).subscribe(
       next => subject.next(next),
       error => subject.error(error),
@@ -396,6 +405,18 @@ export class EntityManager<T extends AbstractEntity> {
     );
 
     return subject.asObservable();
+  }
+
+  callAndThen(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Promise<void> {
+    return this.call(action, callable, ...args)
+      .pipe(filter(transaction => [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
+      .pipe<void>(map((transaction: TransactionState) => {
+        if (transaction.state === TransactionState.error) {
+          throwError(transaction.error);
+        }
+      }))
+      .pipe(take(1))
+      .toPromise();
   }
 
   isExpired(id: any): boolean {

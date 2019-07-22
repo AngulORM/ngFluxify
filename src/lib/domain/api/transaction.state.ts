@@ -6,6 +6,7 @@ export class TransactionState {
 
   state: string;
   action: string;
+  arguments?: any[];
   error?: Error;
   entities?: any[];
 }
