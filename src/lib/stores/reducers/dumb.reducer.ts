@@ -4,7 +4,7 @@ import {EntityDescriptor, PropertyDescriptor} from '../../domain/descriptors';
 import {AnyAction} from 'redux';
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
-  constructor(private entityDescriptor: EntityDescriptor) {
+  constructor(private entityDescriptor: EntityDescriptor<T>) {
     super(entityDescriptor.name);
   }
 
@@ -38,12 +38,17 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
   }
 
   private instanciateEntity(jsonObject: any): T {
+    if (!jsonObject) {
+      return null;
+    }
+
     const entity: T = new this.entityDescriptor.class();
     const properties: Map<string, PropertyDescriptor> = this.entityDescriptor.class.properties;
 
     properties.forEach((value, key) => {
-      if (key in jsonObject) {
-        Reflect.set(entity, key, jsonObject[key]);
+      const label = value.label || key;
+      if (label in jsonObject) {
+        Reflect.set(entity, key, jsonObject[label]);
       }
     });
 

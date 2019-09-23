@@ -23,7 +23,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   static readonly ACTION_DELETE = ['DELETE'];
   static readonly ACTION_RESET = ['RESET'];
 
-  private state: Map<string, any> = INITIAL_STATE;
+  private state: Map<string, any>;
   protected readonly actionsManager: BaseActionsManager;
   protected setCompleted = false;
 
@@ -35,6 +35,8 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     this.actionsManager.addActionSet(AbstractReducer.ACTION_DELETE);
 
     this.actionsManager.addAction(AbstractReducer.ACTION_RESET);
+
+    this.state = this.initialize(INITIAL_STATE);
   }
 
   public createReducer(): Reducer<any> {
@@ -77,7 +79,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
             state = this.finishTransaction(<ResponseAction>action, state, entitiesDeleted);
             break;
           case this.actionsManager.getAction(AbstractReducer.ACTION_RESET):
-            state = INITIAL_STATE;
+            state = this.initialize(INITIAL_STATE);
             break;
           default:
             state = this.handleCustomActions(state, action);
@@ -136,6 +138,10 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   }
 
   protected setEntity(state: Map<string, any>, entity: T): Map<string, any> {
+    if (!entity) {
+      return state;
+    }
+
     return state.set('entities', (<Map<any, T>>state.get('entities')).set(entity.primary, entity));
   }
 
@@ -166,4 +172,8 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected abstract update(action: AnyAction): T | T[];
 
   protected abstract delete(action: AnyAction): any | any[];
+
+  protected initialize(state: Map<string, any>): Map<string, any> {
+    return state;
+  }
 }

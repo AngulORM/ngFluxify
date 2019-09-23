@@ -2,6 +2,7 @@ import {EntityManager} from '../api';
 import {PropertyDescriptor} from '../descriptors';
 import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
+import {isObject} from 'rxjs/internal-compatibility';
 
 // @dynamic
 export abstract class AbstractEntity {
@@ -50,10 +51,21 @@ export abstract class AbstractEntity {
   }
 
   public get sanitized(): any {
-    const sanitized = {};
+    const sanitizeValue = val => {
+      if (val) {
+        if (Array.isArray(val)) {
+          return val.map(el => sanitizeValue(el));
+        } else if (isObject(val) && 'sanitized' in val) {
+          return val.sanitized;
+        }
+      }
 
-    this.constructor['properties'].forEach((value, key) => {
-      sanitized[key] = this[key];
+      return val;
+    };
+
+    const sanitized = {};
+    this.constructor['properties'].forEach((value: PropertyDescriptor, key: string) => {
+      sanitized[value.label ? value.label : key] = sanitizeValue(this[key]);
     });
 
     return sanitized;

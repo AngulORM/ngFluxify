@@ -1,7 +1,12 @@
-export abstract class EntityDescriptor {
+import {Type} from '@angular/core';
+import {IEntityService} from '../../services';
+import {AbstractEntity} from '../entities';
+
+export abstract class EntityDescriptor<T extends AbstractEntity> {
   abstract readonly reducerType: any;
-  abstract readonly serviceType: any;
-  class?: any;
+  abstract readonly serviceType: Type<IEntityService<T>>;
+  abstract readonly serviceDeps: any[];
+  class?: Type<T> | any;
   name: string;
 
   canRead = true;
@@ -10,7 +15,7 @@ export abstract class EntityDescriptor {
   canUpdate = true;
   canDelete = true;
 
-  expirationDetectionStrategy: (id: any) => boolean;
+  expirationDetectionStrategy: (id?: any) => boolean;
 
   constructor(attributes: EntityDescriptorAttributes) {
     this.name = attributes.name;
