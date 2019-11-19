@@ -14,7 +14,7 @@ export class NgReduxService {
 
   private isRootStoreConfigured: boolean;
 
-  constructor(@Inject(NgFluxifyConfigService) private readonly ngFluxifyConfig: NgFluxifyConfig, private ngRedux: NgRedux<IAppState>) {
+  constructor(@Inject(NgFluxifyConfigService) private readonly ngFluxifyConfig: NgFluxifyConfig, public ngRedux: NgRedux<IAppState>) {
     this.configureStore();
   }
 

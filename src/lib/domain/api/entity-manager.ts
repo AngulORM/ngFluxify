@@ -153,7 +153,7 @@ export class EntityManager<T extends AbstractEntity> {
       const transactionId = this.transactionId;
       this.lastReadAllTransactionId = transactionId;
       this.ngRedux.dispatch(<RequestAction>{
-        type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
+        type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ_ALL),
         transactionId: transactionId
       });
 
@@ -161,24 +161,24 @@ export class EntityManager<T extends AbstractEntity> {
       if (isObservable(serviceResponse)) {
         serviceResponse.subscribe(
           data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
+            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
             data: data
           }),
           error => this.ngRedux.dispatch(<ErrorAction>{
-            type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
+            type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
             error: error
           }));
       } else {
         (<Promise<any>>serviceResponse)
           .then(data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
+            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
             data: data
           }))
           .catch(error => this.ngRedux.dispatch(<ErrorAction>{
-            type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
+            type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
             error: error
           }));
@@ -397,12 +397,12 @@ export class EntityManager<T extends AbstractEntity> {
   callAndThen(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Promise<void> {
     return this.call(action, callable, ...args)
       .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
+      .pipe(take(1))
       .pipe<void>(map((transaction: TransactionState) => {
         if (transaction.state === TransactionState.error) {
           throwError(transaction.error);
         }
       }))
-      .pipe(take(1))
       .toPromise();
   }
 

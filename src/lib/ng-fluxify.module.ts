@@ -1,10 +1,8 @@
 import {Injector, ModuleWithProviders, NgModule} from '@angular/core';
 import {NgReduxModule} from '@angular-redux/store';
 
-import {EntityDescriptor} from './domain/descriptors';
 import {NgReduxService} from './services/ng-redux.service';
 import {NgFluxifyConfig, NgFluxifyConfigService} from './services/ng-fluxify-config.service';
-import {AbstractEntity} from './domain/entities';
 
 // @dynamic
 @NgModule({
@@ -17,28 +15,34 @@ import {AbstractEntity} from './domain/entities';
 })
 export class NgFluxifyModule {
   static injector: Injector;
+  static ngReduxService: NgReduxService;
+
+  private static provider: ModuleWithProviders<NgFluxifyModule>;
 
   constructor(private injector: Injector, public ngReduxService: NgReduxService) {
-    NgFluxifyModule.injector = injector;
+    if (!NgFluxifyModule.ready) {
+      NgFluxifyModule.injector = injector;
+      NgFluxifyModule.ngReduxService = ngReduxService;
+    }
+  }
+
+  public static get ready(): boolean {
+    return !!NgFluxifyModule.injector;
   }
 
   public static initialize(ngFluxifyConfig: NgFluxifyConfig): ModuleWithProviders<NgFluxifyModule> {
-    return {
-      ngModule: NgFluxifyModule,
-      providers: [
-        {
-          provide: NgFluxifyConfigService,
-          useValue: ngFluxifyConfig
-        }
-      ]
-    };
-  }
+    if (!NgFluxifyModule.provider) {
+      NgFluxifyModule.provider = {
+        ngModule: NgFluxifyModule,
+        providers: [
+          {
+            provide: NgFluxifyConfigService,
+            useValue: ngFluxifyConfig
+          }
+        ]
+      };
+    }
 
-  public static get entities(): EntityDescriptor<AbstractEntity>[] {
-    return NgFluxifyModule.injector.get(NgReduxService).entities;
-  }
-
-  public get entities(): EntityDescriptor<AbstractEntity>[] {
-    return this.ngReduxService.entities;
+    return NgFluxifyModule.provider;
   }
 }
