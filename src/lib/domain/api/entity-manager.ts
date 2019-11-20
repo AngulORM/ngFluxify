@@ -1,5 +1,5 @@
 import {AbstractEntity} from '../entities';
-import {BehaviorSubject, isObservable, Observable, throwError} from 'rxjs';
+import {BehaviorSubject, isObservable, Observable, of, throwError} from 'rxjs';
 import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
@@ -119,7 +119,7 @@ export class EntityManager<T extends AbstractEntity> {
         .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
         .pipe<T>(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error) {
-            throwError(transaction.error);
+            return throwError(transaction.error);
           }
           return this.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
         }))
@@ -189,7 +189,7 @@ export class EntityManager<T extends AbstractEntity> {
         .pipe<T[]>(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error) {
 
-            throwError(transaction.error);
+            return throwError(transaction.error);
           }
           return this.ngRedux.select<Map<any, T>>([this.entityDescriptor.name, 'entities'])
             .pipe(map(entities => entities.toArray()));
@@ -265,11 +265,11 @@ export class EntityManager<T extends AbstractEntity> {
       this.ngRedux
         .select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
         .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-        .pipe(map((transaction: TransactionState) => {
+        .pipe(mergeMap((transaction: TransactionState) => {
           if (transaction.state === TransactionState.error || transaction.entities.length < 1) {
-            throwError(transaction.error);
+            return throwError(transaction.error);
           }
-          return transaction;
+          return of(transaction);
         }))
         .pipe(take(1))
         .toPromise()
@@ -316,11 +316,11 @@ export class EntityManager<T extends AbstractEntity> {
 
     return this.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
       .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe<any>(map((transaction: TransactionState): any => {
+      .pipe<any>(mergeMap((transaction: TransactionState): any => {
         if (transaction.state === TransactionState.error) {
-          throwError(transaction.error);
+          return throwError(transaction.error);
         }
-        return transaction.entities[0];
+        return of(transaction.entities[0]);
       }))
       .pipe<any>(take(1))
       .toPromise<any>();
@@ -382,7 +382,7 @@ export class EntityManager<T extends AbstractEntity> {
       .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
       .pipe<K>(mergeMap((transaction: TransactionState) => {
         if (transaction.state === TransactionState.error) {
-          throwError(transaction.error);
+          return throwError(transaction.error);
         }
         return this.ngRedux.select<K>([this.entityDescriptor.name, ...selector]);
       })).subscribe(
@@ -394,14 +394,18 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
-  callAndThen(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Promise<void> {
+  callAndThen(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Promise<any> {
     return this.call(action, callable, ...args)
-      .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
+      .pipe(filter(transaction => {
+        return transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1;
+      }))
       .pipe(take(1))
-      .pipe<void>(map((transaction: TransactionState) => {
+      .pipe(mergeMap((transaction: TransactionState) => {
         if (transaction.state === TransactionState.error) {
-          throwError(transaction.error);
+          return throwError(transaction.error);
         }
+
+        return of(null);
       }))
       .toPromise();
   }

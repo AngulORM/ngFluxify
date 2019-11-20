@@ -1,6 +1,6 @@
 {
   "name": "ng-fluxify",
-  "version": "0.7.12",
+  "version": "0.7.13",
   "description": "Angular library that provide easy to use and robust data layer, scalable for large projects",
   "repository": {
     "type": "git",
@@ -31,10 +31,10 @@
   "dependencies": {
     "@angular-redux/form": "^9.0.1",
     "@angular-redux/store": "^9.0.0",
-    "redux": "^4.0.0",
+    "redux": "4.0.0",
     "redux-logger": "^3.0.6",
     "redux-observable": "^1.0.0",
-    "rxjs": "~6.4.0",
+    "rxjs": "6.4.0",
     "immutable": "~3.8.0"
   },
   "devDependencies": {
