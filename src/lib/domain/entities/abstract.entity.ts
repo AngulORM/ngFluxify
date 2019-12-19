@@ -1,8 +1,8 @@
 import {EntityManager} from '../api';
 import {PropertyDescriptor} from '../descriptors';
-import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
 import {isObject} from 'rxjs/internal-compatibility';
+import {IEntityService} from '../../services/IEntity.service';
 
 // @dynamic
 export abstract class AbstractEntity {
@@ -69,6 +69,30 @@ export abstract class AbstractEntity {
     });
 
     return sanitized;
+  }
+
+  static onPreRead(id: any) {
+  }
+
+  static onPostRead(id: any) {
+  }
+
+  static onPreReadAll() {
+  }
+
+  static onPostReadAll() {
+  }
+
+  static onPreSave(id: any) {
+  }
+
+  static onPostSave(id: any) {
+  }
+
+  static onPreDelete(id: any) {
+  }
+
+  static onPostDelete(id: any) {
   }
 
   public static read<T extends AbstractEntity = AbstractEntity>(id: any): Observable<T> {

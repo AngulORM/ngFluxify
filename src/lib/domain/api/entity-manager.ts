@@ -4,13 +4,14 @@ import {NgRedux} from '@angular-redux/store';
 import {AbstractReducer, IAppState} from '../../stores';
 import {EntityDescriptor} from '../descriptors';
 import {Map} from 'immutable';
-import {IEntityService, NgReduxService} from '../../services';
 import {filter, map, mergeMap, take} from 'rxjs/operators';
 import {BaseActionsManager} from '../../stores/base.action';
 import {ActionsManagerFactory} from '../../stores/action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from '../../stores/actions';
 import {TransactionState} from './transaction.state';
 import {MethodNotAllowedError} from '../errors';
+import {NgReduxService} from '../../services/ng-redux.service';
+import {IEntityService} from '../../services/IEntity.service';
 
 // @dynamic
 export class EntityManager<T extends AbstractEntity> {
@@ -32,7 +33,7 @@ export class EntityManager<T extends AbstractEntity> {
     return subject.asObservable();
   }
 
-  private get entities(): Map<any, T> {
+  get entities(): Map<any, T> {
     return this.state.get('entities');
   }
 
@@ -81,6 +82,7 @@ export class EntityManager<T extends AbstractEntity> {
         throw new MethodNotAllowedError('This entity does not provide getById');
       }
 
+      this.entityDescriptor.class.onPreRead(id);
       const transactionId = this.transactionId;
       this.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
@@ -91,11 +93,14 @@ export class EntityManager<T extends AbstractEntity> {
       const serviceResponse = this.service.read(id);
       if (isObservable(serviceResponse)) {
         serviceResponse.subscribe(
-          data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
-            transactionId: transactionId,
-            data: data
-          }),
+          data => {
+            this.ngRedux.dispatch(<ResponseAction>{
+              type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
+              transactionId: transactionId,
+              data: data
+            });
+            this.entityDescriptor.class.onPostRead(id);
+          },
           error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
             transactionId: transactionId,
@@ -103,11 +108,14 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       } else {
         (<Promise<any>>serviceResponse)
-          .then(data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
-            transactionId: transactionId,
-            data: data
-          }))
+          .then(data => {
+            this.ngRedux.dispatch(<ResponseAction>{
+              type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ),
+              transactionId: transactionId,
+              data: data
+            });
+            this.entityDescriptor.class.onPostRead();
+          })
           .catch(error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
             transactionId: transactionId,
@@ -150,6 +158,7 @@ export class EntityManager<T extends AbstractEntity> {
         throw new MethodNotAllowedError('This entity does not provide getAll');
       }
 
+      this.entityDescriptor.class.onPreReadAll();
       const transactionId = this.transactionId;
       this.lastReadAllTransactionId = transactionId;
       this.ngRedux.dispatch(<RequestAction>{
@@ -160,11 +169,14 @@ export class EntityManager<T extends AbstractEntity> {
       const serviceResponse = this.service.readAll();
       if (isObservable(serviceResponse)) {
         serviceResponse.subscribe(
-          data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
-            transactionId: transactionId,
-            data: data
-          }),
+          data => {
+            this.ngRedux.dispatch(<ResponseAction>{
+              type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
+              transactionId: transactionId,
+              data: data
+            });
+            this.entityDescriptor.class.onPostReadAll();
+          },
           error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
@@ -172,11 +184,14 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       } else {
         (<Promise<any>>serviceResponse)
-          .then(data => this.ngRedux.dispatch(<ResponseAction>{
-            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
-            transactionId: transactionId,
-            data: data
-          }))
+          .then(data => {
+            this.ngRedux.dispatch(<ResponseAction>{
+              type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
+              transactionId: transactionId,
+              data: data
+            });
+            this.entityDescriptor.class.onPostReadAll();
+          })
           .catch(error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
             transactionId: transactionId,
@@ -216,6 +231,7 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws MethodNotAllowedError
    */
   save(entity: T): Promise<Observable<T>> {
+    this.entityDescriptor.class.onPreSave(entity.primary);
     const transactionId = this.transactionId;
     if (!!entity.primary) {
       if (!this.entityDescriptor.canUpdate) {
@@ -228,11 +244,14 @@ export class EntityManager<T extends AbstractEntity> {
         arguments: [entity]
       });
       this.service.update(entity)
-        .then(data => this.ngRedux.dispatch(<ResponseAction>{
-          type: this.actionManager.getResponseAction(AbstractReducer.ACTION_UPDATE),
-          transactionId: transactionId,
-          data: data
-        }))
+        .then(data => {
+          this.ngRedux.dispatch(<ResponseAction>{
+            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_UPDATE),
+            transactionId: transactionId,
+            data: data
+          });
+          this.entityDescriptor.class.onPostSave(entity.primary);
+        })
         .catch(error => this.ngRedux.dispatch(<ErrorAction>{
           type: this.actionManager.getErrorAction(AbstractReducer.ACTION_UPDATE),
           transactionId: transactionId,
@@ -249,11 +268,14 @@ export class EntityManager<T extends AbstractEntity> {
         arguments: [entity]
       });
       this.service.create(entity)
-        .then(data => this.ngRedux.dispatch(<ResponseAction>{
-          type: this.actionManager.getResponseAction(AbstractReducer.ACTION_CREATE),
-          transactionId: transactionId,
-          data: data
-        }))
+        .then(data => {
+          this.ngRedux.dispatch(<ResponseAction>{
+            type: this.actionManager.getResponseAction(AbstractReducer.ACTION_CREATE),
+            transactionId: transactionId,
+            data: data
+          });
+          this.entityDescriptor.class.onPostSave(entity.primary);
+        })
         .catch(error => this.ngRedux.dispatch(<ErrorAction>{
           type: this.actionManager.getErrorAction(AbstractReducer.ACTION_CREATE),
           transactionId: transactionId,
@@ -296,6 +318,7 @@ export class EntityManager<T extends AbstractEntity> {
       throw new MethodNotAllowedError('This entity does not provide delete');
     }
 
+    this.entityDescriptor.class.onPreDelete(entity.primary);
     const transactionId = this.transactionId;
     this.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE),
@@ -303,11 +326,14 @@ export class EntityManager<T extends AbstractEntity> {
       arguments: [entity.primary]
     });
     this.service.delete(entity.primary)
-      .then(data => this.ngRedux.dispatch(<ResponseAction>{
-        type: this.actionManager.getResponseAction(AbstractReducer.ACTION_DELETE),
-        transactionId: transactionId,
-        data: entity.primary
-      }))
+      .then(_ => {
+        this.ngRedux.dispatch(<ResponseAction>{
+          type: this.actionManager.getResponseAction(AbstractReducer.ACTION_DELETE),
+          transactionId: transactionId,
+          data: entity.primary
+        });
+        this.entityDescriptor.class.onPostDelete(entity.primary);
+      })
       .catch(error => this.ngRedux.dispatch(<ErrorAction>{
         type: this.actionManager.getErrorAction(AbstractReducer.ACTION_DELETE),
         transactionId: transactionId,

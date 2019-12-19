@@ -1,6 +1,6 @@
 import {Type} from '@angular/core';
-import {IEntityService} from '../../services';
 import {AbstractEntity} from '../entities';
+import {IEntityService} from '../../services/IEntity.service';
 
 export abstract class EntityDescriptor<T extends AbstractEntity> {
   abstract readonly reducerType: any;

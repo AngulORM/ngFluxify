@@ -3,8 +3,8 @@ import {HttpClient} from '@angular/common/http';
 import {isFunction} from 'rxjs/internal-compatibility';
 
 import {DumbReducer} from '../../stores';
-import {RestService} from '../../services';
 import {AbstractRestEntity} from '../entities';
+import {RestService} from '../../services/rest-service';
 
 export class RestEntityDescriptor<T extends AbstractRestEntity> extends EntityDescriptor<T> {
   readonly reducerType: any = DumbReducer;

@@ -7,6 +7,7 @@ import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
 import {TransactionState} from '../domain/api/transaction.state'; // Do not change, solve circular dependencies
 import {isObject} from 'rxjs/internal-compatibility';
+import {EntityDescriptor} from '../domain/descriptors';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
@@ -28,8 +29,8 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected readonly actionsManager: BaseActionsManager;
   protected setCompleted = false;
 
-  constructor(identifier: string) {
-    this.actionsManager = ActionsManagerFactory.getActionsManager(identifier);
+  constructor(protected entityDescriptor: EntityDescriptor<T>) {
+    this.actionsManager = ActionsManagerFactory.getActionsManager(entityDescriptor.name);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_CREATE);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_READ);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_READ_ALL);

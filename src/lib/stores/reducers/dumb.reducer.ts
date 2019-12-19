@@ -4,8 +4,8 @@ import {EntityDescriptor, PropertyDescriptor} from '../../domain/descriptors';
 import {AnyAction} from 'redux';
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
-  constructor(private entityDescriptor: EntityDescriptor<T>) {
-    super(entityDescriptor.name);
+  constructor(entityDescriptor: EntityDescriptor<T>) {
+    super(entityDescriptor);
   }
 
   protected create(action: AnyAction): T | T[] {
