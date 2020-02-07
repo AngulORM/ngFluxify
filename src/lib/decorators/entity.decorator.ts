@@ -7,9 +7,9 @@ import {NgRedux} from '@angular-redux/store';
 import {IEntityService} from '../services/IEntity.service';
 import {NgReduxService} from '../services/ng-redux.service';
 
-export function Entity<T extends EntityDescriptor<K>, K extends AbstractEntity>(entityDescriptor: T): ClassDecorator {
-  return function (constructor: any) {
-    if (!constructor.primaryKey) {
+export function Entity<T extends EntityDescriptor<K>, K extends AbstractEntity>(entityDescriptor: T) {
+  return function (target) {
+    if (!target.primaryKey || target.primaryKey.length === 0) {
       throw new Error(`Entity ${entityDescriptor.name} has no primary key`);
     }
 
@@ -17,17 +17,53 @@ export function Entity<T extends EntityDescriptor<K>, K extends AbstractEntity>(
       throw new Error(`Entity ${entityDescriptor.name} has no service`);
     }
 
-    entityDescriptor.class = constructor;
+    entityDescriptor.class = target;
 
-    const interval = setInterval(() => {
-      if (NgFluxifyModule.ready) {
-        clearInterval(interval);
+    let injector: Injector;
+    const descriptorToken = new InjectionToken<T>(`${entityDescriptor.name} descriptor token`);
+    const serviceToken = new InjectionToken<IEntityService<K>>(`${entityDescriptor.name} service token`);
+    const entityManagerToken = new InjectionToken<EntityManager<K>>(`${entityDescriptor.name} entityManager token`);
 
-        const descriptorToken = new InjectionToken<T>(`${entityDescriptor.name} descriptor token`);
-        const serviceToken = new InjectionToken<IEntityService<K>>(`${entityDescriptor.name} service token`);
-        const entityManagerToken = new InjectionToken<EntityManager<K>>(`${entityDescriptor.name} entityManager token`);
+    Reflect.defineProperty(target, 'entityService', {
+      enumerable: false,
+      configurable: false,
+      get: () => {
+        if (!initialized) {
+          target.initialize();
+        }
 
-        const injector = Injector.create({
+        if (!injector) {
+          throw new Error('Injector not ready yet');
+        }
+
+        return injector.get(serviceToken);
+      }
+    });
+
+    Reflect.defineProperty(target, 'entityManager', {
+      enumerable: false,
+      configurable: false,
+      get: () => {
+        if (!initialized) {
+          target.initialize();
+        }
+
+        if (!injector) {
+          throw new Error('Injector not ready yet');
+        }
+
+        return injector.get(entityManagerToken);
+      }
+    });
+
+    let initialized = false;
+    Reflect.set(target, 'initialize', () => {
+      if (!initialized) {
+        if (!NgFluxifyModule.ready) {
+          throw Error('NgFluxify not ready yet');
+        }
+
+        injector = Injector.create({
           parent: NgFluxifyModule.injector,
           providers: [
             {provide: descriptorToken, useValue: entityDescriptor},
@@ -36,22 +72,9 @@ export function Entity<T extends EntityDescriptor<K>, K extends AbstractEntity>(
           ]
         });
 
-        Reflect.defineProperty(constructor, 'entityService', {
-          enumerable: false,
-          configurable: false,
-          get: () => {
-            return injector.get(serviceToken);
-          }
-        });
-
-        Reflect.defineProperty(constructor, 'entityManager', {
-          enumerable: false,
-          configurable: false,
-          get: () => {
-            return injector.get(entityManagerToken);
-          }
-        });
+        initialized = true;
       }
-    }, 100);
+    });
   };
 }
+

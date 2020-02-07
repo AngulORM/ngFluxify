@@ -233,7 +233,7 @@ export class EntityManager<T extends AbstractEntity> {
   save(entity: T): Promise<Observable<T>> {
     this.entityDescriptor.class.onPreSave(entity.primary);
     const transactionId = this.transactionId;
-    if (!!entity.primary) {
+    if (!!entity.primary && this.entities.has(entity.primary)) {
       if (!this.entityDescriptor.canUpdate) {
         throw new MethodNotAllowedError('This entity does not provide update');
       }

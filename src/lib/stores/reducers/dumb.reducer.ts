@@ -1,6 +1,6 @@
 import {AbstractReducer} from '../abstract.reducer';
 import {AbstractEntity} from '../../domain/entities';
-import {EntityDescriptor, PropertyDescriptor} from '../../domain/descriptors';
+import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../domain/descriptors';
 import {AnyAction} from 'redux';
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
@@ -46,6 +46,10 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     const properties: Map<string, PropertyDescriptor> = this.entityDescriptor.class.properties;
 
     properties.forEach((value, key) => {
+      if (value.parsingStrategy === ParsingStrategy.IGNORE_DATASOURCE || value.parsingStrategy === ParsingStrategy.IGNORE_GET_FROM_DATASOURCE) {
+        return;
+      }
+
       const label = value.label || key;
       if (label in jsonObject) {
         Reflect.set(entity, key, jsonObject[label]);

@@ -17,8 +17,6 @@ export class NgFluxifyModule {
   static injector: Injector;
   static ngReduxService: NgReduxService;
 
-  private static provider: ModuleWithProviders<NgFluxifyModule>;
-
   constructor(private injector: Injector, public ngReduxService: NgReduxService) {
     if (!NgFluxifyModule.ready) {
       NgFluxifyModule.injector = injector;
@@ -31,18 +29,14 @@ export class NgFluxifyModule {
   }
 
   public static initialize(ngFluxifyConfig: NgFluxifyConfig): ModuleWithProviders<NgFluxifyModule> {
-    if (!NgFluxifyModule.provider) {
-      NgFluxifyModule.provider = {
-        ngModule: NgFluxifyModule,
-        providers: [
-          {
-            provide: NgFluxifyConfigService,
-            useValue: ngFluxifyConfig
-          }
-        ]
-      };
-    }
-
-    return NgFluxifyModule.provider;
+    return {
+      ngModule: NgFluxifyModule,
+      providers: [
+        {
+          provide: NgFluxifyConfigService,
+          useValue: ngFluxifyConfig
+        }
+      ]
+    };
   }
 }

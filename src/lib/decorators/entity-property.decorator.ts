@@ -1,7 +1,11 @@
-import {PropertyDescriptor} from '../domain/descriptors';
+import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
 
 export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
+    if (!propertyDescriptor.parsingStrategy) {
+      propertyDescriptor.parsingStrategy = ParsingStrategy.DEFAULT;
+    }
+
     target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
 
     const value = Reflect.get(target, propName);
@@ -25,7 +29,12 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
             propertyDescriptor.type.prototype.valueOf();
             return propertyDescriptor.type(val);
           } catch {
-            return new propertyDescriptor.type(val);
+            try {
+              return new propertyDescriptor.type(val);
+            } catch (e) {
+              // @ts-ignore
+              return propertyDescriptor.type(val);
+            }
           }
         };
 
