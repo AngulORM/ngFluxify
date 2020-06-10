@@ -1,7 +1,7 @@
-import {EntityManager} from '../api';
-import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
 import {Observable} from 'rxjs';
 import {isObject} from 'rxjs/internal-compatibility';
+import {EntityManager} from '../api';
+import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
 import {IEntityService} from '../../services/IEntity.service';
 
 // @dynamic
@@ -74,7 +74,7 @@ export abstract class AbstractEntity {
         return;
       }
 
-      sanitized[value.label ? value.label : key] = sanitizeValue(this[key]);
+      sanitized[value.label ? value.label : key] = sanitizeValue(this[`_${key}`]);
     });
 
     return sanitized;
@@ -104,11 +104,11 @@ export abstract class AbstractEntity {
   static onPostDelete(id: any) {
   }
 
-  public static read<T extends AbstractEntity = AbstractEntity>(id: any): Observable<T> {
+  public static read<T extends AbstractEntity>(id: any): Observable<T> {
     return <Observable<T>>this.entityManager.getById(id);
   }
 
-  public static readAll<T extends AbstractEntity = AbstractEntity>(): Observable<T[]> {
+  public static readAll<T extends AbstractEntity>(): Observable<T[]> {
     return <Observable<T[]>>this.entityManager.getAll();
   }
 
@@ -120,11 +120,13 @@ export abstract class AbstractEntity {
     return this.constructor['read'](this.primary);
   }
 
-  public save<T extends AbstractEntity = AbstractEntity>(): Promise<Observable<T>> {
-    return this.constructor['entityManager'].save(this);
+  public save<T extends AbstractEntity>(): Promise<Observable<T>> {
+    return <Promise<Observable<T>>>this.constructor['entityManager'].save(this);
   }
 
   public delete(): Promise<number> {
-    return this.constructor['entityManager'].delete(this);
+    return <Promise<number>>this.constructor['entityManager'].delete(this);
   }
 }
+
+export const trackByPrimary = (_, item: AbstractEntity) => item.primary;

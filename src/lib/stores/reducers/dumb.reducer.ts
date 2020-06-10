@@ -1,11 +1,21 @@
+import {AnyAction} from 'redux';
 import {AbstractReducer} from '../abstract.reducer';
 import {AbstractEntity} from '../../domain/entities';
 import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../domain/descriptors';
-import {AnyAction} from 'redux';
+import {NgFluxifyConfig} from '../../services/ng-fluxify-config.service';
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
-  constructor(entityDescriptor: EntityDescriptor<T>) {
-    super(entityDescriptor);
+  private proxyAvailables: boolean;
+
+  constructor(entityDescriptor: EntityDescriptor<T>, ngFluxifyConfig: NgFluxifyConfig) {
+    super(entityDescriptor, ngFluxifyConfig);
+
+    try {
+      const proxyTest = new Proxy({}, {});
+      this.proxyAvailables = (proxyTest instanceof Object);
+    } catch (_) {
+      this.proxyAvailables = false;
+    }
   }
 
   protected create(action: AnyAction): T | T[] {
@@ -43,19 +53,55 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     }
 
     const entity: T = new this.entityDescriptor.class();
+
+    if (this.proxyAvailables && this.ngFluxifyConfig.enableJITEntityParsing) {
+      const primaryKey: [string, PropertyDescriptor][] = this.entityDescriptor.class.primaryKey;
+      primaryKey.forEach(key => {
+        this.parseProperty(entity, jsonObject, key[1], key[0]);
+      });
+
+      let isParsed: boolean;
+      const handler = {
+        get: (target: T, key: PropertyKey, receiver: any) => {
+          if (!isParsed && primaryKey.every(pKey => pKey[0] !== key)) {
+            this.parse(entity, jsonObject);
+            isParsed = true;
+          }
+
+          return Reflect.get(target, key, receiver);
+        },
+        set: (target: T, p: PropertyKey, value: any, receiver: any): boolean => {
+          if (!isParsed) {
+            this.parse(entity, jsonObject);
+            isParsed = true;
+          }
+
+          return Reflect.set(target, p, value, receiver);
+        }
+      };
+      return new Proxy(entity, handler);
+    }
+
+    this.parse(entity, jsonObject);
+    return entity;
+  }
+
+  private parse(entity: T, jsonObject: any) {
     const properties: Map<string, PropertyDescriptor> = this.entityDescriptor.class.properties;
 
     properties.forEach((value, key) => {
-      if (value.parsingStrategy === ParsingStrategy.IGNORE_DATASOURCE || value.parsingStrategy === ParsingStrategy.IGNORE_GET_FROM_DATASOURCE) {
-        return;
-      }
-
-      const label = value.label || key;
-      if (label in jsonObject) {
-        Reflect.set(entity, key, jsonObject[label]);
-      }
+      this.parseProperty(entity, jsonObject, value, key);
     });
+  }
 
-    return entity;
+  private parseProperty(entity: T, jsonObject: any, value: PropertyDescriptor, key: string) {
+    if (value.parsingStrategy === ParsingStrategy.IGNORE_DATASOURCE || value.parsingStrategy === ParsingStrategy.IGNORE_GET_FROM_DATASOURCE) {
+      return;
+    }
+
+    const label = value.label || key;
+    if (label in jsonObject) {
+      Reflect.set(entity, key, jsonObject[label]);
+    }
   }
 }

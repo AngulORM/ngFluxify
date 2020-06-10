@@ -8,6 +8,7 @@ import {ErrorAction, RequestAction, ResponseAction} from './actions';
 import {TransactionState} from '../domain/api/transaction.state'; // Do not change, solve circular dependencies
 import {isObject} from 'rxjs/internal-compatibility';
 import {EntityDescriptor} from '../domain/descriptors';
+import {NgFluxifyConfig} from '../services/ng-fluxify-config.service';
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
@@ -29,7 +30,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   protected readonly actionsManager: BaseActionsManager;
   protected setCompleted = false;
 
-  constructor(protected entityDescriptor: EntityDescriptor<T>) {
+  constructor(protected entityDescriptor: EntityDescriptor<T>, protected ngFluxifyConfig: NgFluxifyConfig) {
     this.actionsManager = ActionsManagerFactory.getActionsManager(entityDescriptor.name);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_CREATE);
     this.actionsManager.addActionSet(AbstractReducer.ACTION_READ);
@@ -45,6 +46,10 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   public createReducer(): Reducer<any> {
     return (state: Map<string, any> = this.state, action: AnyAction): Map<string, any> => {
       if ((<string>action.type).match(this.actionsManager.getActionScheme())) {
+        if (this.ngFluxifyConfig.enableDynamicStateMutability) {
+          state = this.mutableState(state);
+        }
+
         state = state.set('state', action.type);
         this.setCompleted = false;
 
@@ -101,6 +106,9 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
         }
       }
 
+      if (this.ngFluxifyConfig.enableDynamicStateMutability) {
+        state = this.immutableState(state);
+      }
       return state;
     };
   }
@@ -180,5 +188,26 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   protected initialize(state: Map<string, any>): Map<string, any> {
     return state;
+  }
+
+  private mutableState(state: Map<string, any>): Map<string, any> {
+    state = state.asMutable();
+    state.forEach((value, key) => {
+      if (Map.isMap(value)) {
+        state.set(key, value.asMutable());
+      }
+    });
+
+    return state;
+  }
+
+  private immutableState(state: Map<string, any>): Map<string, any> {
+    state.forEach((value, key) => {
+      if (Map.isMap(value)) {
+        state.set(key, Map(value));
+      }
+    });
+
+    return state.asImmutable();
   }
 }

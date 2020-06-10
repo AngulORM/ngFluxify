@@ -55,7 +55,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
 
       Reflect.defineProperty(target, propName, {
         enumerable: enumerable,
-        configurable: false,
+        configurable: true,
         get: getter,
         set: setter
       });

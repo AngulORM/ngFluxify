@@ -30,7 +30,7 @@ export class NgReduxService {
     this.entityList.set(entityDescriptor.name, entityDescriptor);
 
     if (this.isRootStoreConfigured) {
-      this.ngRedux.replaceReducer(RootReducer.addReducer(entityDescriptor));
+      this.ngRedux.replaceReducer(RootReducer.addReducer(entityDescriptor, this.ngFluxifyConfig));
     } else {
       this.configureStore();
     }
@@ -44,7 +44,7 @@ export class NgReduxService {
         enhancers.push(applyMiddleware(logger));
       }
 
-      this.ngRedux.configureStore(RootReducer.getReducer(this.entities), {}, [], enhancers);
+      this.ngRedux.configureStore(RootReducer.getReducer(this.entities, this.ngFluxifyConfig), {}, [], enhancers);
       this.isRootStoreConfigured = true;
     }
   }
