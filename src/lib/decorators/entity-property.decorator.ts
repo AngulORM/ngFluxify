@@ -8,7 +8,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
 
     target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
 
-    const value = Reflect.get(target, propName);
+    const value = target[propName];
     const enumerable = Reflect.getOwnPropertyDescriptor(target, propName) ? Reflect.getOwnPropertyDescriptor(target, propName).enumerable : false;
 
     if (Reflect.deleteProperty(target, propName)) {
@@ -20,7 +20,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       });
 
       const getter = function () {
-        return Reflect.get(this, `_${propName}`);
+        return this[`_${propName}`];
       };
 
       const setter = function (newVal) {
@@ -50,7 +50,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
           }
         }
 
-        Reflect.set(this, `_${propName}`, newVal);
+        this[`_${propName}`] = newVal;
       };
 
       Reflect.defineProperty(target, propName, {

@@ -10,23 +10,28 @@ export abstract class AbstractEntity {
   public static entityService: IEntityService<AbstractEntity>;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
+  private static _computedProperties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
 
   public static get properties(): Map<string, PropertyDescriptor> {
-    let thisProperties = AbstractEntity._properties.get(this);
-    if (!thisProperties) {
-      thisProperties = new Map<string, PropertyDescriptor>();
+    if (!AbstractEntity._computedProperties.has(this)) {
+      let thisProperties = AbstractEntity._properties.get(this);
+      if (!thisProperties) {
+        thisProperties = new Map<string, PropertyDescriptor>();
+      }
+
+      if (this !== AbstractEntity) {
+        const parentProperties = Object.getPrototypeOf(this).properties;
+        thisProperties = new Map(function* () {
+          yield* parentProperties;
+          // @ts-ignore
+          yield* thisProperties;
+        }());
+      }
+
+      AbstractEntity._computedProperties.set(this, thisProperties);
     }
 
-    if (this !== AbstractEntity) {
-      const parentProperties = Object.getPrototypeOf(this).properties;
-      return new Map(function* () {
-        yield* parentProperties;
-        // @ts-ignore
-        yield* thisProperties;
-      }());
-    }
-
-    return thisProperties;
+    return AbstractEntity._computedProperties.get(this);
   }
 
   public static get primaryKey(): [string, PropertyDescriptor][] {
@@ -48,10 +53,10 @@ export abstract class AbstractEntity {
     }
 
     if (primaryKey.length === 1) {
-      return Reflect.get(this, primaryKey[0][0]);
+      return this[primaryKey[0][0]];
     }
 
-    const keys = primaryKey.map(value => JSON.stringify(Reflect.get(this, value[0])));
+    const keys = primaryKey.map(value => JSON.stringify(this[value[0]]));
     return `<${keys.toString()}>`;
   }
 
@@ -116,7 +121,7 @@ export abstract class AbstractEntity {
     return this.entityManager.count;
   }
 
-  public read(): void {
+  public read<T extends AbstractEntity>(): Observable<T> {
     return this.constructor['read'](this.primary);
   }
 
@@ -129,4 +134,4 @@ export abstract class AbstractEntity {
   }
 }
 
-export const trackByPrimary = (_, item: AbstractEntity) => item.primary;
+export const trackByPrimary = (_, item: AbstractEntity) => item ? item.primary : null;

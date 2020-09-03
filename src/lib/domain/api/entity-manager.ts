@@ -58,7 +58,7 @@ export class EntityManager<T extends AbstractEntity> {
   }
 
   private get service(): IEntityService<T> {
-    return Reflect.get(this.entityDescriptor.class, 'entityService');
+    return this.entityDescriptor.class['entityService'];
   }
 
   private get isGettingAll(): boolean {
@@ -131,17 +131,9 @@ export class EntityManager<T extends AbstractEntity> {
           }
           return this.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
         }))
-        .subscribe(
-          next => subject.next(next),
-          error => subject.error(error),
-          () => subject.complete()
-        );
+        .subscribe(subject);
     } else {
-      this.ngRedux.select([this.entityDescriptor.name, 'entities', id]).subscribe(
-        (next: T) => subject.next(next),
-        error => subject.error(error),
-        () => subject.complete()
-      );
+      this.ngRedux.select([this.entityDescriptor.name, 'entities', id]).subscribe(subject);
     }
 
     return subject.asObservable().pipe(filter(element => !!element));
@@ -208,19 +200,11 @@ export class EntityManager<T extends AbstractEntity> {
           }
           return this.ngRedux.select<Map<any, T>>([this.entityDescriptor.name, 'entities'])
             .pipe(map(entities => entities.toArray()));
-        })).subscribe(
-        next => subject.next(next),
-        error => subject.error(error),
-        () => subject.complete()
-      );
+        })).subscribe(subject);
     } else {
       this.ngRedux.select([this.entityDescriptor.name, 'entities'])
         .pipe(map((entities: Map<any, T>): T[] => entities.toArray()))
-        .subscribe(
-          next => subject.next(next),
-          error => subject.error(error),
-          () => subject.complete()
-        );
+        .subscribe(subject);
     }
 
     return subject.asObservable();

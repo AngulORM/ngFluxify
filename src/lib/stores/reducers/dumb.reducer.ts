@@ -62,21 +62,26 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
 
       let isParsed: boolean;
       const handler = {
-        get: (target: T, key: PropertyKey, receiver: any) => {
+        get: (target: T, key: PropertyKey) => {
           if (!isParsed && primaryKey.every(pKey => pKey[0] !== key)) {
             this.parse(entity, jsonObject);
             isParsed = true;
           }
 
-          return Reflect.get(target, key, receiver);
+          return target[key];
         },
-        set: (target: T, p: PropertyKey, value: any, receiver: any): boolean => {
+        set: (target: T, p: PropertyKey, value: any): boolean => {
           if (!isParsed) {
             this.parse(entity, jsonObject);
             isParsed = true;
           }
 
-          return Reflect.set(target, p, value, receiver);
+          try {
+            target[p] = value;
+            return true;
+          } catch {
+            return false;
+          }
         }
       };
       return new Proxy(entity, handler);
@@ -101,7 +106,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
 
     const label = value.label || key;
     if (label in jsonObject) {
-      Reflect.set(entity, key, jsonObject[label]);
+      entity[key] = jsonObject[label];
     }
   }
 }
