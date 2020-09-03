@@ -1,34 +1,41 @@
-import {EntityManager} from '../api';
-import {PropertyDescriptor} from '../descriptors';
-import {IEntityService} from '../../services';
 import {Observable} from 'rxjs';
-import {EntityProperty} from '../../decorators';
+import {isObject} from 'rxjs/internal-compatibility';
+import {EntityManager} from '../api';
+import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
+import {IEntityService} from '../../services/IEntity.service';
 
+// @dynamic
 export abstract class AbstractEntity {
   public static entityManager: EntityManager<AbstractEntity>;
   public static entityService: IEntityService<AbstractEntity>;
 
   private static _properties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
-
-  @EntityProperty({type: Number})
-  public id: number;
+  private static _computedProperties: Map<any, Map<string, PropertyDescriptor>> = new Map<any, Map<string, PropertyDescriptor>>();
 
   public static get properties(): Map<string, PropertyDescriptor> {
-    let thisProperties = AbstractEntity._properties.get(this);
-    if (!thisProperties) {
-      thisProperties = new Map<string, PropertyDescriptor>();
+    if (!AbstractEntity._computedProperties.has(this)) {
+      let thisProperties = AbstractEntity._properties.get(this);
+      if (!thisProperties) {
+        thisProperties = new Map<string, PropertyDescriptor>();
+      }
+
+      if (this !== AbstractEntity) {
+        const parentProperties = Object.getPrototypeOf(this).properties;
+        thisProperties = new Map(function* () {
+          yield* parentProperties;
+          // @ts-ignore
+          yield* thisProperties;
+        }());
+      }
+
+      AbstractEntity._computedProperties.set(this, thisProperties);
     }
 
-    if (this !== AbstractEntity) {
-      const parentProperties = Object.getPrototypeOf(this).properties;
-      return new Map(function* () {
-        yield* parentProperties;
-        // @ts-ignore
-        yield* thisProperties;
-      }());
-    }
+    return AbstractEntity._computedProperties.get(this);
+  }
 
-    return thisProperties;
+  public static get primaryKey(): [string, PropertyDescriptor][] {
+    return Array.from(this.properties.entries()).filter(property => property[1].primary);
   }
 
   public static addProperty(prototype: any, key: string, descriptor: PropertyDescriptor) {
@@ -39,37 +46,92 @@ export abstract class AbstractEntity {
     AbstractEntity._properties.get(prototype).set(key, descriptor);
   }
 
-  public get sanitized(): any {
-    const sanitized = {};
+  public get primary(): any {
+    const primaryKey: [string, PropertyDescriptor][] = this.constructor['primaryKey'];
+    if (!primaryKey || primaryKey.length === 0) {
+      return;
+    }
 
-    this.constructor['properties'].forEach((value, key) => {
-      sanitized[key] = this[key];
+    if (primaryKey.length === 1) {
+      return this[primaryKey[0][0]];
+    }
+
+    const keys = primaryKey.map(value => JSON.stringify(this[value[0]]));
+    return `<${keys.toString()}>`;
+  }
+
+  public get sanitized(): any {
+    const sanitizeValue = val => {
+      if (val) {
+        if (Array.isArray(val)) {
+          return val.map(el => sanitizeValue(el));
+        } else if (isObject(val) && 'sanitized' in val) {
+          return val.sanitized;
+        }
+      }
+
+      return val;
+    };
+
+    const sanitized = {};
+    this.constructor['properties'].forEach((value: PropertyDescriptor, key: string) => {
+      if (value.parsingStrategy === ParsingStrategy.IGNORE_DATASOURCE || value.parsingStrategy === ParsingStrategy.IGNORE_SET_TO_DATASOURCE) {
+        return;
+      }
+
+      sanitized[value.label ? value.label : key] = sanitizeValue(this[`_${key}`]);
     });
 
     return sanitized;
   }
 
-  public static read(id: number): Observable<AbstractEntity> {
-    return this.entityManager.getById(id);
+  static onPreRead(id: any) {
   }
 
-  public static readAll(): Observable<AbstractEntity[]> {
-    return this.entityManager.getAll();
+  static onPostRead(id: any) {
+  }
+
+  static onPreReadAll() {
+  }
+
+  static onPostReadAll() {
+  }
+
+  static onPreSave(id: any) {
+  }
+
+  static onPostSave(id: any) {
+  }
+
+  static onPreDelete(id: any) {
+  }
+
+  static onPostDelete(id: any) {
+  }
+
+  public static read<T extends AbstractEntity>(id: any): Observable<T> {
+    return <Observable<T>>this.entityManager.getById(id);
+  }
+
+  public static readAll<T extends AbstractEntity>(): Observable<T[]> {
+    return <Observable<T[]>>this.entityManager.getAll();
   }
 
   public static get count(): Observable<number> {
     return this.entityManager.count;
   }
 
-  public read(): void {
-    return this.constructor['read'](this.id);
+  public read<T extends AbstractEntity>(): Observable<T> {
+    return this.constructor['read'](this.primary);
   }
 
-  public save(): Promise<Observable<AbstractEntity>> {
-    return this.constructor['entityManager'].save(this);
+  public save<T extends AbstractEntity>(): Promise<Observable<T>> {
+    return <Promise<Observable<T>>>this.constructor['entityManager'].save(this);
   }
 
   public delete(): Promise<number> {
-    return this.constructor['entityManager'].delete(this);
+    return <Promise<number>>this.constructor['entityManager'].delete(this);
   }
 }
+
+export const trackByPrimary = (_, item: AbstractEntity) => item ? item.primary : null;

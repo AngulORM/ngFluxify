@@ -1,10 +1,14 @@
-import {PropertyDescriptor} from '../domain/descriptors';
+import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
 
 export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
+    if (!propertyDescriptor.parsingStrategy) {
+      propertyDescriptor.parsingStrategy = ParsingStrategy.DEFAULT;
+    }
+
     target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
 
-    const value = Reflect.get(target, propName);
+    const value = target[propName];
     const enumerable = Reflect.getOwnPropertyDescriptor(target, propName) ? Reflect.getOwnPropertyDescriptor(target, propName).enumerable : false;
 
     if (Reflect.deleteProperty(target, propName)) {
@@ -16,23 +20,42 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       });
 
       const getter = function () {
-        return Reflect.get(this, `_${propName}`);
+        return this[`_${propName}`];
       };
 
       const setter = function (newVal) {
-        try {
-          propertyDescriptor.type.prototype.valueOf();
-          newVal = propertyDescriptor.type(newVal);
-        } catch {
-          newVal = new propertyDescriptor.type(newVal);
+        const create = (val) => {
+          try {
+            propertyDescriptor.type.prototype.valueOf();
+            return propertyDescriptor.type(val);
+          } catch {
+            try {
+              return new propertyDescriptor.type(val);
+            } catch (e) {
+              // @ts-ignore
+              return propertyDescriptor.type(val);
+            }
+          }
+        };
+
+        if (newVal) {
+          if (propertyDescriptor.enumerable) {
+            if (Array.isArray(newVal)) {
+              newVal = newVal.map(el => create(el));
+            } else {
+              newVal = [];
+            }
+          } else {
+            newVal = create(newVal);
+          }
         }
 
-        Reflect.set(this, `_${propName}`, newVal);
+        this[`_${propName}`] = newVal;
       };
 
       Reflect.defineProperty(target, propName, {
         enumerable: enumerable,
-        configurable: false,
+        configurable: true,
         get: getter,
         set: setter
       });

@@ -2,18 +2,13 @@ import {AbstractRestEntity} from '../domain/entities';
 import {IEntityService} from './IEntity.service';
 import {RestEntityDescriptor} from '../domain/descriptors';
 import {HttpClient} from '@angular/common/http';
-import {NgFluxifyModule} from '../ng-fluxify.module';
 
 export class RestService<T extends AbstractRestEntity> implements IEntityService<T> {
-  constructor(protected entityDescriptor: RestEntityDescriptor) {
+  constructor(protected entityDescriptor: RestEntityDescriptor<T>, protected httpClient: HttpClient) {
 
   }
 
-  get httpClient(): HttpClient {
-    return NgFluxifyModule.injector.get(HttpClient);
-  }
-
-  public async read(id: number) {
+  public async read(id: any): Promise<any> {
     return this.httpClient.get(`${this.entityDescriptor.route}/${id}`).toPromise();
   }
 
@@ -22,14 +17,14 @@ export class RestService<T extends AbstractRestEntity> implements IEntityService
   }
 
   public async create(entity: T) {
-    return this.httpClient.post(this.entityDescriptor.route, entity).toPromise();
+    return this.httpClient.post(this.entityDescriptor.route, entity.sanitized).toPromise();
   }
 
   public async update(entity: T) {
-    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.id}`, entity).toPromise();
+    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.primary}`, entity.sanitized).toPromise();
   }
 
-  public async delete(id: number) {
+  public async delete(id: any): Promise<any> {
     return this.httpClient.delete(`${this.entityDescriptor.route}/${id}`).toPromise();
   }
 }

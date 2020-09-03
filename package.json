@@ -1,7 +1,7 @@
 {
   "name": "ng-fluxify",
-  "version": "0.0.1",
-  "description": "Provide a full data layer, using Redux and Flux pattern. Manages application's store state for quick, easy and efficient comsuption of APIs and other data sources. Helps to focus on application features, not on data lifecycle management.",
+  "version": "1.0.0-rc.0",
+  "description": "Angular library that provide easy to use and robust data layer, scalable for large projects",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/AngulORM/ngFluxify.git"
@@ -20,17 +20,24 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@angular/common": "^6.1.0",
-    "@angular/core": "^6.1.0",
-    "redux": "^4.0.0"
+    "@angular/common": ">=6.1.0",
+    "@angular/core": ">=6.1.0",
+    "redux": "^4.0.0",
+    "redux-devtools-extension": "^2.13.8",
+    "@angular-redux/form": "^10.0.0",
+    "@angular-redux/store": "^10.0.0",
+    "rxjs": "~6.5.4",
+    "immutable": "~3.8.0"
   },
   "dependencies": {
-    "@angular-redux/form": "^9.0.1",
-    "@angular-redux/store": "^9.0.0",
-    "redux": "^4.0.0",
+    "@angular-redux/form": "^10.0.0",
+    "@angular-redux/store": "^10.0.0",
+    "redux": "4.0.0",
+    "redux-devtools-extension": "^2.13.8",
     "redux-logger": "^3.0.6",
     "redux-observable": "^1.0.0",
-    "rxjs": "^6.4.0"
+    "rxjs": "~6.5.4",
+    "immutable": "~3.8.0"
   },
   "devDependencies": {
     "@commitlint/cli": "^7.0.0",
