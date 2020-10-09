@@ -1,9 +1,39 @@
 import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
 
+const types = new Map<any, boolean>();
+
+function createPrimitive(val: any, propertyDescriptor: PropertyDescriptor): any {
+  try {
+    return propertyDescriptor.type(val);
+  } catch {
+    return createNonPrimitive(val, propertyDescriptor);
+  }
+}
+
+function createNonPrimitive(val: any, propertyDescriptor: PropertyDescriptor): any {
+  try {
+    return new propertyDescriptor.type(val);
+  } catch {
+    // @ts-ignore
+    return propertyDescriptor.type(val);
+  }
+}
+
 export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
     if (!propertyDescriptor.parsingStrategy) {
       propertyDescriptor.parsingStrategy = ParsingStrategy.DEFAULT;
+    }
+
+    if (!types.has(propertyDescriptor.type)) {
+      let isPrimitive = true;
+      try {
+        propertyDescriptor.type.prototype.valueOf();
+      } catch {
+        isPrimitive = false;
+      } finally {
+        types.set(propertyDescriptor.type, isPrimitive);
+      }
     }
 
     target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
@@ -23,30 +53,18 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
         return this[`_${propName}`];
       };
 
-      const setter = function (newVal) {
-        const create = (val) => {
-          try {
-            propertyDescriptor.type.prototype.valueOf();
-            return propertyDescriptor.type(val);
-          } catch {
-            try {
-              return new propertyDescriptor.type(val);
-            } catch (e) {
-              // @ts-ignore
-              return propertyDescriptor.type(val);
-            }
-          }
-        };
+      const create = types.get(propertyDescriptor.type) ? createPrimitive : createNonPrimitive;
 
+      const setter = function (newVal) {
         if (newVal) {
           if (propertyDescriptor.enumerable) {
             if (Array.isArray(newVal)) {
-              newVal = newVal.map(el => create(el));
+              newVal = newVal.map(el => create(el, propertyDescriptor));
             } else {
               newVal = [];
             }
           } else {
-            newVal = create(newVal);
+            newVal = create(newVal, propertyDescriptor);
           }
         }
 
