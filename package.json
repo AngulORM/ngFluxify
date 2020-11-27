@@ -1,6 +1,6 @@
 {
   "name": "ng-fluxify",
-  "version": "1.0.0-rc.3",
+  "version": "1.0.0-rc.4",
   "description": "Angular library that provide easy to use and robust data layer, scalable for large projects",
   "repository": {
     "type": "git",
@@ -20,24 +20,24 @@
   ],
   "license": "MIT",
   "peerDependencies": {
-    "@angular/common": ">=6.1.0",
-    "@angular/core": ">=6.1.0",
-    "redux": "^4.0.0",
-    "redux-devtools-extension": "^2.13.8",
     "@angular-redux/form": "^10.0.0",
     "@angular-redux/store": "^10.0.0",
-    "rxjs": "~6.6.2",
-    "immutable": "~3.8.0"
+    "@angular/common": ">=6.1.0",
+    "@angular/core": ">=6.1.0",
+    "immutable": "~3.8.0",
+    "redux": "^4.0.0",
+    "redux-devtools-extension": "^2.13.8",
+    "rxjs": "6.6.2"
   },
   "dependencies": {
     "@angular-redux/form": "^10.0.0",
     "@angular-redux/store": "^10.0.0",
+    "immutable": "~3.8.0",
     "redux": "4.0.0",
     "redux-devtools-extension": "^2.13.8",
     "redux-logger": "^3.0.6",
     "redux-observable": "^1.0.0",
-    "rxjs": "~6.6.2",
-    "immutable": "~3.8.0",
+    "rxjs": "6.6.2",
     "tslib": "^2.0.0"
   },
   "devDependencies": {

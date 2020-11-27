@@ -1,6 +1,5 @@
 import {filter, map} from 'rxjs/operators';
 import {combineLatest} from "rxjs";
-import {isFunction} from "util";
 import {Type} from "@angular/core";
 import {AssociationDescriptor} from '../domain/descriptors';
 import {AbstractEntity} from '../domain/entities';
@@ -27,7 +26,7 @@ export function OneToMany<T extends AssociationDescriptor>(associationDescriptor
       }
 
       // @ts-ignore
-      if (isFunction(associationDescriptor.entity) && !associationDescriptor.entity.prototype) {
+      if (typeof associationDescriptor.entity === 'function' && !associationDescriptor.entity.prototype) {
         associationDescriptor.entity = (associationDescriptor.entity as (() => Type<AbstractEntity>))();
       }
 

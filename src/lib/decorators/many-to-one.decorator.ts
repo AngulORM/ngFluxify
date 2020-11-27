@@ -1,7 +1,6 @@
 import {filter, map, switchMap} from 'rxjs/operators';
 import {Observable, of} from "rxjs";
 import {Type} from "@angular/core";
-import {isFunction} from "util";
 
 import {AssociationDescriptor} from '../domain/descriptors';
 import {AbstractEntity} from '../domain/entities';
@@ -29,7 +28,7 @@ export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor
       }
 
       // @ts-ignore
-      if (isFunction(associationDescriptor.entity) && !associationDescriptor.entity.prototype) {
+      if (typeof associationDescriptor.entity === 'function' && !associationDescriptor.entity.prototype) {
         associationDescriptor.entity = (associationDescriptor.entity as (() => Type<AbstractEntity>))();
       }
 
