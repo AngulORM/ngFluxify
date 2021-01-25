@@ -6,22 +6,24 @@ export class DispatchQueue {
   private dispatchTimeout: number;
 
   enQueue(action: AnyAction) {
-    if (this.queue.some(item => JSON.stringify(item) === JSON.stringify(action))) {
-      return;
-    }
-
     let similar: AnyAction = null;
 
     if (action.type.endsWith('_READ_RESPONSE')) {
       similar = this.queue.find(item => item.transactionId === action.transactionId && item.type === action.type);
+    } else if (this.queue.some(item => JSON.stringify(item) === JSON.stringify(action))) {
+      return;
     }
 
     if (similar) {
-      if (Array.isArray(similar.data)) {
-        similar.data.push(action.data);
-      } else {
-        similar.data = [similar.data, action.data];
+      if (!Array.isArray(similar.data)) {
+        similar.data = [similar.data];
       }
+
+      if (similar.data.some(data => JSON.stringify(data) === JSON.stringify(action.data))) {
+        return;
+      }
+
+      similar.data.push(action.data);
     } else {
       this.queue.push(action);
     }
