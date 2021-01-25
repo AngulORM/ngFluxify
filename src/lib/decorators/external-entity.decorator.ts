@@ -1,5 +1,5 @@
 import {Type} from "@angular/core";
-import {Observable, of} from "rxjs";
+import {combineLatest, Observable, of} from "rxjs";
 import {filter, map, switchMap} from "rxjs/operators";
 import {NgFluxifyModule} from "../ng-fluxify.module";
 import {AbstractEntity} from "../domain/entities";
@@ -12,6 +12,8 @@ import {AbstractReducer, ActionsManagerFactory} from "../stores";
  */
 export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
+    const obs$ = new Map<any, Observable<AbstractEntity>>();
+
     propertyDescriptor.parsingStrategy = ParsingStrategy.IGNORE_SET_TO_DATASOURCE;
 
     target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
@@ -29,6 +31,8 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
         externalClass = entityDescriptor.class;
       } else if (typeof propertyDescriptor.type === 'function' && !propertyDescriptor.type.prototype) {
         externalClass = (propertyDescriptor.type as (() => Type<AbstractEntity>))();
+      } else {
+        externalClass = propertyDescriptor.type;
       }
     }
 
@@ -48,11 +52,29 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
         return (this.primary ? this.read() : of(this))
           .pipe(filter(val => !!val))
           .pipe(map(val => val[`_${propName}`]))
-          .pipe(switchMap((foreignKey: any): Observable<AbstractEntity> => {
-            // @ts-ignore
-            return externalClass.read(foreignKey);
-          }))
-          .pipe(filter(element => !!element));
+          .pipe(switchMap((foreignKey: any | any[]): Observable<AbstractEntity | AbstractEntity[]> => {
+            if (Array.isArray(foreignKey)) {
+              return combineLatest(
+                foreignKey.map(key => {
+                  if (!obs$.has(key)) {
+                    // @ts-ignore
+                    obs$.set(key, externalClass.read(key));
+                  }
+
+                  return obs$.get(key);
+                })
+              );
+            } else if (!foreignKey) {
+              return of(null);
+            } else {
+              if (!obs$.has(foreignKey)) {
+                // @ts-ignore
+                obs$.set(foreignKey, externalClass.read(foreignKey));
+              }
+
+              return obs$.get(foreignKey);
+            }
+          }));
       };
 
       const setter = function (newVal) {
@@ -63,8 +85,8 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
         if (newVal) {
           // @ts-ignore
           const actionManager = ActionsManagerFactory.getActionsManager(externalClass.entityManager.entityDescriptor.name);
-          const action = actionManager.getResponseAction(propertyDescriptor.enumerable ? AbstractReducer.ACTION_READ_ALL : AbstractReducer.ACTION_READ);
-          NgFluxifyModule.ngReduxService.ngRedux.dispatch({
+          const action = actionManager.getResponseAction(AbstractReducer.ACTION_READ);
+          NgFluxifyModule.dispatchQueue.enQueue({
             type: action,
             transactionId: null,
             data: newVal
