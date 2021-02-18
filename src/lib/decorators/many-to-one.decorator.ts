@@ -2,8 +2,7 @@ import {filter, map, switchMap} from 'rxjs/operators';
 import {Observable, of} from "rxjs";
 import {Type} from "@angular/core";
 
-import {AssociationDescriptor} from '../domain/descriptors';
-import {AbstractEntity} from '../domain/entities';
+import {AssociationDescriptor} from '../descriptors';
 import {NgFluxifyModule} from "../ng-fluxify.module";
 
 /**
@@ -13,7 +12,7 @@ import {NgFluxifyModule} from "../ng-fluxify.module";
 export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
     const getter = function () {
-      const foreignKeyValue = (entity: AbstractEntity) => entity[associationDescriptor.foreignKey];
+      const foreignKeyValue = (entity: any) => entity[associationDescriptor.foreignKey];
 
       if (typeof associationDescriptor.entity === 'string') {
         const entityDescriptor = NgFluxifyModule.ngReduxService.entities.find(descriptor => descriptor.name === associationDescriptor.entity);
@@ -27,14 +26,14 @@ export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor
 
       // @ts-ignore
       if (typeof associationDescriptor.entity === 'function' && !associationDescriptor.entity.prototype) {
-        associationDescriptor.entity = (associationDescriptor.entity as (() => Type<AbstractEntity>))();
+        associationDescriptor.entity = (associationDescriptor.entity as (() => Type<any>))();
       }
 
       return (this.primary ? this.read() : of(this))
         .pipe(filter(val => !!val))
         .pipe(map(foreignKeyValue))
         .pipe(filter(foreignKey => !!foreignKey))
-        .pipe(switchMap((foreignKey: any): Observable<AbstractEntity> => {
+        .pipe(switchMap((foreignKey: any): Observable<any> => {
           // @ts-ignore
           return associationDescriptor.entity.read(foreignKey);
         }))

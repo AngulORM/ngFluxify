@@ -1,11 +1,11 @@
 import {Type} from '@angular/core';
-import {AbstractEntity} from '../entities';
-import {IEntityService} from '../../services/IEntity.service';
+import {IDataService, IManagerService, ManagerService} from "../services";
 
-export abstract class EntityDescriptor<T extends AbstractEntity> {
+export abstract class EntityDescriptor<T extends Object> {
   abstract readonly reducerType: any;
-  abstract readonly serviceType: Type<IEntityService<T>>;
+  abstract readonly serviceType: Type<IDataService<T>>;
   abstract readonly serviceDeps: any[];
+  readonly managerType: Type<IManagerService<T>> = ManagerService;
   class?: Type<T> | any;
   name: string;
 

@@ -1,10 +1,9 @@
 import {AbstractReducer} from '../abstract.reducer';
-import {AbstractEntity} from '../../domain/entities';
-import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../domain/descriptors';
-import {NgFluxifyConfig} from '../../services/ng-fluxify-config.service';
+import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../descriptors';
+import {NgFluxifyConfig} from "../../services";
 import {ResponseAction} from "../actions";
 
-export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
+export class DumbReducer<T extends Object> extends AbstractReducer<T> {
   private proxyAvailables: boolean;
 
   constructor(entityDescriptor: EntityDescriptor<T>, ngFluxifyConfig: NgFluxifyConfig) {

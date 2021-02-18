@@ -12,6 +12,7 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "importHelpers": true,
+    "downlevelIteration": true,
     "typeRoots": [
       "../node_modules/@types"
     ],

@@ -1,4 +1,5 @@
-import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
+import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
+import {EntityModel} from "./entity.decorator";
 
 const types = new Map<any, boolean>();
 
@@ -36,13 +37,15 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       }
     }
 
-    target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
+    const entityModel = EntityModel.getModel(target.constructor);
+    const entityData = entityModel.data(target);
+    entityModel.addProperty(propName, propertyDescriptor);
 
     const value = target[propName];
     const enumerable = Reflect.getOwnPropertyDescriptor(target, propName) ? Reflect.getOwnPropertyDescriptor(target, propName).enumerable : false;
 
     if (Reflect.deleteProperty(target, propName)) {
-      Reflect.defineProperty(target, `_${propName}`, {
+      Reflect.defineProperty(entityData, propName, {
         configurable: false,
         enumerable: enumerable,
         writable: true,
@@ -50,7 +53,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       });
 
       const getter = function () {
-        return this[`_${propName}`];
+        return entityData[propName];
       };
 
       const create = types.get(propertyDescriptor.type) ? createPrimitive : createNonPrimitive;
@@ -68,7 +71,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
           }
         }
 
-        this[`_${propName}`] = newVal;
+        entityData[propName] = newVal;
       };
 
       Reflect.defineProperty(target, propName, {

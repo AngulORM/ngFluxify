@@ -2,9 +2,9 @@ import {Type} from "@angular/core";
 import {combineLatest, interval, Observable, of} from "rxjs";
 import {debounce, filter, map, switchMap} from "rxjs/operators";
 import {NgFluxifyModule} from "../ng-fluxify.module";
-import {AbstractEntity} from "../domain/entities";
-import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
+import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
 import {AbstractReducer, ActionsManagerFactory} from "../stores";
+import {EntityModel} from "./entity.decorator";
 
 /**
  * @Preview
@@ -12,13 +12,15 @@ import {AbstractReducer, ActionsManagerFactory} from "../stores";
  */
 export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
-    const obs$ = new Map<any, Observable<AbstractEntity>>();
+    const obs$ = new Map<any, Observable<any>>();
 
     propertyDescriptor.parsingStrategy = ParsingStrategy.IGNORE_SET_TO_DATASOURCE;
 
-    target.constructor.addProperty(target.constructor, propName, propertyDescriptor);
+    const entityModel = EntityModel.getModel(target.constructor);
+    const entityData = entityModel.data(target);
+    entityModel.addProperty(propName, propertyDescriptor);
 
-    let externalClass: Type<AbstractEntity>;
+    let externalClass: Type<any>;
 
     function getExternalClass() {
       if (typeof propertyDescriptor.type === 'string') {
@@ -30,14 +32,14 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 
         externalClass = entityDescriptor.class;
       } else if (typeof propertyDescriptor.type === 'function' && !propertyDescriptor.type.prototype) {
-        externalClass = (propertyDescriptor.type as (() => Type<AbstractEntity>))();
+        externalClass = (propertyDescriptor.type as (() => Type<any>))();
       } else {
         externalClass = propertyDescriptor.type;
       }
     }
 
     if (Reflect.deleteProperty(target, propName)) {
-      Reflect.defineProperty(target, `_${propName}`, {
+      Reflect.defineProperty(entityData, propName, {
         configurable: false,
         enumerable: propertyDescriptor.enumerable,
         writable: true,
@@ -79,7 +81,8 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 
               return obs$.get(foreignKey);
             }
-          }));
+          })
+        );
       };
 
       const setter = function (newVal) {
@@ -99,12 +102,12 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 
           if (propertyDescriptor.enumerable) {
             if (Array.isArray(newVal)) {
-              this[`_${propName}`] = newVal.map(el => guessPrimaryKey(el, externalClass));
+              entityData[propName] = newVal.map(el => guessPrimaryKey(el, externalClass));
             } else {
-              this[`_${propName}`] = [];
+              entityData[propName] = [];
             }
           } else {
-            this[`_${propName}`] = guessPrimaryKey(newVal, externalClass);
+            entityData[propName] = guessPrimaryKey(newVal, externalClass);
           }
         }
       };
@@ -120,7 +123,7 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 }
 
 function guessPrimaryKey(data: any, externalClass: any): any {
-  const primaryKey: [string, PropertyDescriptor][] = externalClass['primaryKey'];
+  const primaryKey: [string, PropertyDescriptor][] = EntityModel.getModel(externalClass).primaryKey;
   if (!primaryKey || primaryKey.length === 0) {
     return;
   }

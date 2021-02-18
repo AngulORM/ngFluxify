@@ -1,8 +1,7 @@
 import {Type} from '@angular/core';
-import {AbstractEntity} from '../entities';
 
 export interface AssociationDescriptor {
-  entity: Type<AbstractEntity> | (() => Type<AbstractEntity>) | string;
+  entity: Type<any> | (() => Type<any>) | string;
   foreignKey: string;
   primaryKey?: string;
 }

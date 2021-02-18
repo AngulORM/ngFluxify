@@ -1,24 +1,24 @@
 import {Map} from 'immutable';
 import {AnyAction, Reducer} from 'redux';
 
-import {AbstractEntity} from '../domain/entities';
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
-import {TransactionState} from '../domain/api/transaction.state'; // Do not change, solve circular dependencies
+import {TransactionModel} from '../models/transaction.model'; // Do not change, solve circular dependencies
 import {isObject} from 'rxjs/internal-compatibility';
-import {EntityDescriptor} from '../domain/descriptors';
-import {NgFluxifyConfig} from '../services/ng-fluxify-config.service';
+import {EntityDescriptor} from '../descriptors';
+import {NgFluxifyConfig} from "../services";
+import {EntityModel} from "../decorators";
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
-  entities: Map<any, AbstractEntity>(),
+  entities: Map<any, any>(),
   isComplete: false,
-  transactions: Map<number, TransactionState>()
+  transactions: Map<number, TransactionModel>()
 });
 
 // @dynamic
-export abstract class AbstractReducer<T extends AbstractEntity> {
+export abstract class AbstractReducer<T extends Object> {
   static readonly ACTION_CREATE = ['CREATE'];
   static readonly ACTION_READ = ['READ'];
   static readonly ACTION_READ_ALL = ['READ', 'ALL'];
@@ -113,7 +113,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   protected startTransaction(action: RequestAction, state: Map<string, any>): Map<string, any> {
     return state.setIn(['transactions', action.transactionId], {
-      state: TransactionState.started,
+      state: TransactionModel.started,
       action: action.type,
       arguments: action.arguments
     });
@@ -123,14 +123,14 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     const entitiesId = [];
     if (Array.isArray(entities)) {
       for (const entity of entities) {
-        entitiesId.push(isObject(entity) ? (<T>entity).primary : entity);
+        entitiesId.push(isObject(entity) ? this.entityModel.primary(entity) : entity);
       }
     } else {
-      entitiesId.push(isObject(entities) ? (<T>entities).primary : entities);
+      entitiesId.push(isObject(entities) ? this.entityModel.primary(entities) : entities);
     }
 
     return state.setIn(['transactions', action.transactionId], {
-      state: TransactionState.finished,
+      state: TransactionModel.finished,
       action: action.type,
       entities: entitiesId
     });
@@ -138,7 +138,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   protected errorTransaction(action: ErrorAction, state: Map<string, any>): Map<string, any> {
     return state.setIn(['transactions', action.transactionId], {
-      state: TransactionState.error,
+      state: TransactionModel.error,
       action: action.type,
       error: action.error
     });
@@ -161,7 +161,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
       return state;
     }
 
-    return state.setIn(['entities', entity.primary], entity);
+    return state.setIn(['entities', this.entityModel.primary(entity)], entity);
   }
 
   protected removeEntities(state: Map<string, any>, ids: any | any[]): Map<string, any> {
@@ -181,11 +181,15 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   }
 
   protected clearEntities(state: Map<string, any>): Map<string, any> {
-    return state.set('entities', Map<any, AbstractEntity>());
+    return state.set('entities', Map<any, any>());
   }
 
   protected handleCustomActions(state: Map<string, any>, action: AnyAction): Map<string, any> {
     return state;
+  }
+
+  protected get entityModel(): EntityModel<T> {
+    return EntityModel.getModel(this.entityDescriptor.class);
   }
 
   protected abstract create(action: ResponseAction): T | T[];

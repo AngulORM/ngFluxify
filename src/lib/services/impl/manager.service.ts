@@ -1,30 +1,42 @@
-import {AbstractEntity} from '../entities';
 import {BehaviorSubject, isObservable, Observable, of, throwError} from 'rxjs';
 import {NgRedux} from '@angular-redux/store';
-import {AbstractReducer, IAppState} from '../../stores';
-import {EntityDescriptor} from '../descriptors';
+import {Injectable} from "@angular/core";
+
 import {Map} from 'immutable';
 import {filter, map, mergeMap, take} from 'rxjs/operators';
-import {BaseActionsManager} from '../../stores/base.action';
-import {ActionsManagerFactory} from '../../stores/action.factory';
-import {ErrorAction, RequestAction, ResponseAction} from '../../stores/actions';
-import {TransactionState} from './transaction.state';
-import {MethodNotAllowedError} from '../errors';
-import {NgReduxService} from '../../services/ng-redux.service';
-import {IEntityService} from '../../services/IEntity.service';
+import {
+  AbstractReducer,
+  ActionsManagerFactory,
+  BaseActionsManager,
+  ErrorAction,
+  IAppState, RequestAction,
+  ResponseAction
+} from '../../stores';
+import {EntityDescriptor} from '../../descriptors';
+import {MethodNotAllowedError} from '../../errors';
+import {NgReduxService} from '../ng-redux.service';
+import {IDataService, IManagerService} from "../interfaces";
+import {TransactionModel} from "../../models";
+import {EntityModel} from "../../decorators";
+@Injectable()
+export class ManagerService<T, K extends IDataService<T>> implements IManagerService<T> {
+  protected lastTransactionId = 0;
+  protected lastReadAllTransactionId: number;
 
-// @dynamic
-export class EntityManager<T extends AbstractEntity> {
-  private lastTransactionId = 0;
-  private lastReadAllTransactionId: number;
-
-  constructor(public readonly entityDescriptor: EntityDescriptor<T>, private ngReduxService: NgReduxService, public ngRedux: NgRedux<IAppState>) {
+  constructor(
+    protected entityDescriptor: EntityDescriptor<T>,
+    protected dataService: K,
+    protected ngReduxService: NgReduxService,
+    public ngRedux: NgRedux<IAppState>) {
     ngReduxService.registerEntity(entityDescriptor);
   }
 
-  get count(): Observable<number> {
+  get count$(): Observable<number> {
     const subject: BehaviorSubject<number> = new BehaviorSubject(this.entities.toArray().length);
-    this.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length)).subscribe(subject);
+    this.ngRedux
+      .select<Map<number, T>>([this.entityDescriptor.name, 'entities'])
+      .pipe(map(entities => entities.toArray().length))
+      .subscribe(subject);
 
     return subject.asObservable();
   }
@@ -33,32 +45,32 @@ export class EntityManager<T extends AbstractEntity> {
     return this.state.get('entities');
   }
 
-  private get isComplete(): Boolean {
+  get isComplete(): boolean {
     return this.state.get('isComplete');
   }
 
-  private get transactions(): Map<number, TransactionState> {
+  protected get transactions(): Map<number, TransactionModel> {
     return this.state.get('transactions');
   }
 
-  private get state(): any {
+  protected get state(): any {
     return this.ngRedux.getState()[this.entityDescriptor.name];
   }
 
-  private get actionManager(): BaseActionsManager {
+  protected get actionManager(): BaseActionsManager {
     return ActionsManagerFactory.getActionsManager(this.entityDescriptor.name);
   }
 
-  private get transactionId(): number {
+  protected get transactionId(): number {
     return ++this.lastTransactionId;
   }
 
-  private get service(): IEntityService<T> {
-    return this.entityDescriptor.class['entityService'];
+  protected get isGettingAll(): boolean {
+    return this.lastReadAllTransactionId && this.transactions.get(this.lastReadAllTransactionId) && this.transactions.get(this.lastReadAllTransactionId).state === TransactionModel.started;
   }
 
-  private get isGettingAll(): boolean {
-    return this.lastReadAllTransactionId && this.transactions.get(this.lastReadAllTransactionId) && this.transactions.get(this.lastReadAllTransactionId).state === TransactionState.started;
+  protected get entityModel(): EntityModel<T> {
+    return EntityModel.getModel(this.entityDescriptor.class);
   }
 
   /**
@@ -66,7 +78,7 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws MethodNotAllowedError
    * @throws Error
    */
-  getById(id: any): Observable<T> {
+  read(id: any): Observable<T> {
     if (!id) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
@@ -78,7 +90,6 @@ export class EntityManager<T extends AbstractEntity> {
         throw new MethodNotAllowedError('This entity does not provide getById');
       }
 
-      this.entityDescriptor.class.onPreRead(id);
       const transactionId = this.transactionId;
       this.ngRedux.dispatch(<RequestAction>{
         type: this.actionManager.getRequestAction(AbstractReducer.ACTION_READ),
@@ -86,7 +97,7 @@ export class EntityManager<T extends AbstractEntity> {
         arguments: [id]
       });
 
-      const serviceResponse = this.service.read(id);
+      const serviceResponse = this.dataService.read(id);
       if (isObservable(serviceResponse)) {
         serviceResponse.subscribe(
           data => {
@@ -95,7 +106,6 @@ export class EntityManager<T extends AbstractEntity> {
               transactionId: transactionId,
               data: data
             });
-            this.entityDescriptor.class.onPostRead(id);
           },
           error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
@@ -110,7 +120,6 @@ export class EntityManager<T extends AbstractEntity> {
               transactionId: transactionId,
               data: data
             });
-            this.entityDescriptor.class.onPostRead();
           })
           .catch(error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ),
@@ -119,10 +128,10 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       }
 
-      this.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
-        .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-        .pipe<T>(mergeMap((transaction: TransactionState) => {
-          if (transaction.state === TransactionState.error) {
+      this.ngRedux.select<TransactionModel>([this.entityDescriptor.name, 'transactions', transactionId])
+        .pipe(filter(transaction => transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1))
+        .pipe<T>(mergeMap((transaction: TransactionModel) => {
+          if (transaction.state === TransactionModel.error) {
             return throwError(transaction.error);
           }
           return this.ngRedux.select<T>([this.entityDescriptor.name, 'entities', transaction.entities[0]]);
@@ -138,7 +147,7 @@ export class EntityManager<T extends AbstractEntity> {
   /**
    * @throws MethodNotAllowedError
    */
-  getAll(): Observable<T[]> {
+  readAll(): Observable<T[]> {
     const subject: BehaviorSubject<T[]> = new BehaviorSubject(this.entities.toArray());
 
     if ((!this.isComplete || this.isExpired()) && !this.isGettingAll) {
@@ -146,7 +155,6 @@ export class EntityManager<T extends AbstractEntity> {
         throw new MethodNotAllowedError('This entity does not provide getAll');
       }
 
-      this.entityDescriptor.class.onPreReadAll();
       const transactionId = this.transactionId;
       this.lastReadAllTransactionId = transactionId;
       this.ngRedux.dispatch(<RequestAction>{
@@ -154,7 +162,7 @@ export class EntityManager<T extends AbstractEntity> {
         transactionId: transactionId
       });
 
-      const serviceResponse = this.service.readAll();
+      const serviceResponse = this.dataService.readAll();
       if (isObservable(serviceResponse)) {
         serviceResponse.subscribe(
           data => {
@@ -164,7 +172,6 @@ export class EntityManager<T extends AbstractEntity> {
               data: data,
               isComplete: true
             });
-            this.entityDescriptor.class.onPostReadAll();
           },
           error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
@@ -180,7 +187,6 @@ export class EntityManager<T extends AbstractEntity> {
               data: data,
               isComplete: true
             });
-            this.entityDescriptor.class.onPostReadAll();
           })
           .catch(error => this.ngRedux.dispatch(<ErrorAction>{
             type: this.actionManager.getErrorAction(AbstractReducer.ACTION_READ_ALL),
@@ -189,10 +195,10 @@ export class EntityManager<T extends AbstractEntity> {
           }));
       }
 
-      this.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
-        .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-        .pipe<T[]>(mergeMap((transaction: TransactionState) => {
-          if (transaction.state === TransactionState.error) {
+      this.ngRedux.select<TransactionModel>([this.entityDescriptor.name, 'transactions', transactionId])
+        .pipe(filter(transaction => transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1))
+        .pipe<T[]>(mergeMap((transaction: TransactionModel) => {
+          if (transaction.state === TransactionModel.error) {
 
             return throwError(transaction.error);
           }
@@ -213,9 +219,8 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws MethodNotAllowedError
    */
   save(entity: T): Promise<Observable<T>> {
-    this.entityDescriptor.class.onPreSave(entity.primary);
     const transactionId = this.transactionId;
-    if (!!entity.primary && this.entities.has(entity.primary)) {
+    if (!!this.entityModel.primary(entity) && this.entities.has(this.entityModel.primary(entity))) {
       if (!this.entityDescriptor.canUpdate) {
         throw new MethodNotAllowedError('This entity does not provide update');
       }
@@ -225,14 +230,13 @@ export class EntityManager<T extends AbstractEntity> {
         transactionId: transactionId,
         arguments: [entity]
       });
-      this.service.update(entity)
+      this.dataService.update(entity)
         .then(data => {
           this.ngRedux.dispatch(<ResponseAction>{
             type: this.actionManager.getResponseAction(AbstractReducer.ACTION_UPDATE),
             transactionId: transactionId,
             data: data
           });
-          this.entityDescriptor.class.onPostSave(entity.primary);
         })
         .catch(error => this.ngRedux.dispatch(<ErrorAction>{
           type: this.actionManager.getErrorAction(AbstractReducer.ACTION_UPDATE),
@@ -249,14 +253,13 @@ export class EntityManager<T extends AbstractEntity> {
         transactionId: transactionId,
         arguments: [entity]
       });
-      this.service.create(entity)
+      this.dataService.create(entity)
         .then(data => {
           this.ngRedux.dispatch(<ResponseAction>{
             type: this.actionManager.getResponseAction(AbstractReducer.ACTION_CREATE),
             transactionId: transactionId,
             data: data
           });
-          this.entityDescriptor.class.onPostSave(entity.primary);
         })
         .catch(error => this.ngRedux.dispatch(<ErrorAction>{
           type: this.actionManager.getErrorAction(AbstractReducer.ACTION_CREATE),
@@ -267,10 +270,10 @@ export class EntityManager<T extends AbstractEntity> {
 
     return new Promise<Observable<T>>((resolve, reject) => {
       this.ngRedux
-        .select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
-        .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-        .pipe(mergeMap((transaction: TransactionState) => {
-          if (transaction.state === TransactionState.error || transaction.entities.length < 1) {
+        .select<TransactionModel>([this.entityDescriptor.name, 'transactions', transactionId])
+        .pipe(filter(transaction => transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1))
+        .pipe(mergeMap((transaction: TransactionModel) => {
+          if (transaction.state === TransactionModel.error || transaction.entities.length < 1) {
             return throwError(transaction.error);
           }
           return of(transaction);
@@ -300,21 +303,19 @@ export class EntityManager<T extends AbstractEntity> {
       throw new MethodNotAllowedError('This entity does not provide delete');
     }
 
-    this.entityDescriptor.class.onPreDelete(entity.primary);
     const transactionId = this.transactionId;
     this.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(AbstractReducer.ACTION_DELETE),
       transactionId: transactionId,
-      arguments: [entity.primary]
+      arguments: [this.entityModel.primary(entity)]
     });
-    this.service.delete(entity.primary)
+    this.dataService.delete(this.entityModel.primary(entity))
       .then(_ => {
         this.ngRedux.dispatch(<ResponseAction>{
           type: this.actionManager.getResponseAction(AbstractReducer.ACTION_DELETE),
           transactionId: transactionId,
-          data: entity.primary
+          data: this.entityModel.primary(entity)
         });
-        this.entityDescriptor.class.onPostDelete(entity.primary);
       })
       .catch(error => this.ngRedux.dispatch(<ErrorAction>{
         type: this.actionManager.getErrorAction(AbstractReducer.ACTION_DELETE),
@@ -322,10 +323,10 @@ export class EntityManager<T extends AbstractEntity> {
         error: error
       }));
 
-    return this.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId])
-      .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe<any>(mergeMap((transaction: TransactionState): any => {
-        if (transaction.state === TransactionState.error) {
+    return this.ngRedux.select<TransactionModel>([this.entityDescriptor.name, 'transactions', transactionId])
+      .pipe(filter(transaction => transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1))
+      .pipe<any>(mergeMap((transaction: TransactionModel): any => {
+        if (transaction.state === TransactionModel.error) {
           return throwError(transaction.error);
         }
         return of(transaction.entities[0]);
@@ -334,7 +335,7 @@ export class EntityManager<T extends AbstractEntity> {
       .toPromise<any>();
   }
 
-  call(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<TransactionState> {
+  call(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Observable<TransactionModel> {
     const transactionId = this.transactionId;
     this.ngRedux.dispatch(<RequestAction>{
       type: this.actionManager.getRequestAction(action),
@@ -342,7 +343,7 @@ export class EntityManager<T extends AbstractEntity> {
       arguments: args
     });
 
-    const serviceResponse = callable.call(this.service, ...args);
+    const serviceResponse = callable.call(this.dataService, ...args);
     if (isObservable(serviceResponse)) {
       serviceResponse.subscribe(
         data => this.ngRedux.dispatch(<ResponseAction>{
@@ -369,8 +370,8 @@ export class EntityManager<T extends AbstractEntity> {
         }));
     }
 
-    const subject: BehaviorSubject<TransactionState> = new BehaviorSubject(this.state.get('transactions').get(transactionId));
-    this.ngRedux.select<TransactionState>([this.entityDescriptor.name, 'transactions', transactionId]).subscribe(
+    const subject: BehaviorSubject<TransactionModel> = new BehaviorSubject(this.state.get('transactions').get(transactionId));
+    this.ngRedux.select<TransactionModel>([this.entityDescriptor.name, 'transactions', transactionId]).subscribe(
       next => subject.next(next),
       error => subject.error(error),
       () => subject.complete()
@@ -387,9 +388,9 @@ export class EntityManager<T extends AbstractEntity> {
     const subject = new BehaviorSubject<K>(this.state.getIn(selector, defaultValue));
 
     this.call(action, callable, ...args)
-      .pipe(filter(transaction => transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1))
-      .pipe<K>(mergeMap((transaction: TransactionState) => {
-        if (transaction.state === TransactionState.error) {
+      .pipe(filter(transaction => transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1))
+      .pipe<K>(mergeMap((transaction: TransactionModel) => {
+        if (transaction.state === TransactionModel.error) {
           return throwError(transaction.error);
         }
         return this.ngRedux.select<K>([this.entityDescriptor.name, ...selector]);
@@ -405,11 +406,11 @@ export class EntityManager<T extends AbstractEntity> {
   callAndThen(action: string[], callable: (...args) => Promise<any> | Observable<any>, ...args): Promise<any> {
     return this.call(action, callable, ...args)
       .pipe(filter(transaction => {
-        return transaction && [TransactionState.finished, TransactionState.error].indexOf(transaction.state) !== -1;
+        return transaction && [TransactionModel.finished, TransactionModel.error].indexOf(transaction.state) !== -1;
       }))
       .pipe(take(1))
-      .pipe(mergeMap((transaction: TransactionState) => {
-        if (transaction.state === TransactionState.error) {
+      .pipe(mergeMap((transaction: TransactionModel) => {
+        if (transaction.state === TransactionModel.error) {
           return throwError(transaction.error);
         }
 

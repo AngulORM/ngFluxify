@@ -1,15 +1,17 @@
-import {EntityDescriptor, EntityDescriptorAttributes} from './entity.descriptor';
 import {HttpClient} from '@angular/common/http';
+import {Injectable} from "@angular/core";
 import {isFunction} from 'rxjs/internal-compatibility';
 
-import {DumbReducer} from '../../stores';
-import {AbstractRestEntity} from '../entities';
-import {RestService} from '../../services/rest-service';
+import {EntityDescriptor, EntityDescriptorAttributes} from './entity.descriptor';
+import {DumbReducer} from '../stores';
+import {RestService} from '../services';
 
-export class RestEntityDescriptor<T extends AbstractRestEntity> extends EntityDescriptor<T> {
-  readonly reducerType: any = DumbReducer;
-  readonly serviceType: any = RestService;
-  readonly serviceDeps: any[] = [HttpClient];
+@Injectable()
+export class RestEntityDescriptor<T> extends EntityDescriptor<T> {
+  readonly reducerType = DumbReducer;
+  readonly serviceType = RestService;
+  readonly serviceDeps = [HttpClient];
+
   constructor(attributes: RestEntityDescriptorAttributes) {
     super(attributes);
     this._route = attributes.route;

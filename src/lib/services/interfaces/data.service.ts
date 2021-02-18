@@ -1,7 +1,6 @@
-import {AbstractEntity} from '../domain/entities';
 import {Observable} from 'rxjs';
 
-export interface IEntityService<T extends AbstractEntity> {
+export interface IDataService<T extends Object> {
   read(id: any): Promise<any> | Observable<any>;
 
   readAll(): Promise<any> | Observable<any>;

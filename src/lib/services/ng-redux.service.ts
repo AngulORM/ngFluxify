@@ -3,14 +3,13 @@ import {NgRedux} from '@angular-redux/store';
 import {applyMiddleware} from 'redux';
 import {logger} from 'redux-logger';
 import {IAppState, RootReducer} from '../stores';
-import {EntityDescriptor} from '../domain/descriptors';
+import {EntityDescriptor} from '../descriptors';
 import {NgFluxifyConfig, NgFluxifyConfigService} from './ng-fluxify-config.service';
-import {AbstractEntity} from '../domain/entities';
 
 // @dynamic
 @Injectable()
 export class NgReduxService {
-  private entityList: Map<string, EntityDescriptor<AbstractEntity>> = new Map<string, EntityDescriptor<AbstractEntity>>();
+  private entityList: Map<string, EntityDescriptor<any>> = new Map<string, EntityDescriptor<any>>();
 
   private isRootStoreConfigured: boolean;
 
@@ -18,7 +17,7 @@ export class NgReduxService {
     this.configureStore();
   }
 
-  public get entities(): EntityDescriptor<AbstractEntity>[] {
+  public get entities(): EntityDescriptor<any>[] {
     return Array.from(this.entityList.values());
   }
 
@@ -26,7 +25,7 @@ export class NgReduxService {
     return this.ngRedux.getState();
   }
 
-  public registerEntity(entityDescriptor: EntityDescriptor<AbstractEntity>) {
+  public registerEntity(entityDescriptor: EntityDescriptor<any>) {
     this.entityList.set(entityDescriptor.name, entityDescriptor);
 
     if (this.isRootStoreConfigured) {
