@@ -1,6 +1,6 @@
 import {Type} from "@angular/core";
-import {combineLatest, Observable, of} from "rxjs";
-import {filter, map, switchMap} from "rxjs/operators";
+import {combineLatest, interval, Observable, of} from "rxjs";
+import {debounce, filter, map, switchMap} from "rxjs/operators";
 import {NgFluxifyModule} from "../ng-fluxify.module";
 import {AbstractEntity} from "../domain/entities";
 import {ParsingStrategy, PropertyDescriptor} from '../domain/descriptors';
@@ -51,9 +51,14 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 
         return (this.primary ? this.read() : of(this))
           .pipe(filter(val => !!val))
+          .pipe(debounce(val => val[`_${propName}_promise`] || interval(0)))
           .pipe(map(val => val[`_${propName}`]))
           .pipe(switchMap((foreignKey: any | any[]): Observable<AbstractEntity | AbstractEntity[]> => {
             if (Array.isArray(foreignKey)) {
+              if (foreignKey.length === 0) {
+                return of([]);
+              }
+
               return combineLatest(
                 foreignKey.map(key => {
                   if (!obs$.has(key)) {
@@ -86,7 +91,7 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
           // @ts-ignore
           const actionManager = ActionsManagerFactory.getActionsManager(externalClass.entityManager.entityDescriptor.name);
           const action = actionManager.getResponseAction(AbstractReducer.ACTION_READ);
-          NgFluxifyModule.dispatchQueue.enQueue({
+          this[`_${propName}_promise`] = NgFluxifyModule.dispatchQueue.enQueue({
             type: action,
             transactionId: null,
             data: newVal

@@ -24,11 +24,7 @@ export class EntityManager<T extends AbstractEntity> {
 
   get count(): Observable<number> {
     const subject: BehaviorSubject<number> = new BehaviorSubject(this.entities.toArray().length);
-    this.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length)).subscribe(
-      next => subject.next(next),
-      error => subject.error(error),
-      () => subject.complete()
-    );
+    this.ngRedux.select<Map<number, T>>([this.entityDescriptor.name, 'entities']).pipe(map(entities => entities.toArray().length)).subscribe(subject);
 
     return subject.asObservable();
   }
@@ -165,7 +161,8 @@ export class EntityManager<T extends AbstractEntity> {
             this.ngRedux.dispatch(<ResponseAction>{
               type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
               transactionId: transactionId,
-              data: data
+              data: data,
+              isComplete: true
             });
             this.entityDescriptor.class.onPostReadAll();
           },
@@ -180,7 +177,8 @@ export class EntityManager<T extends AbstractEntity> {
             this.ngRedux.dispatch(<ResponseAction>{
               type: this.actionManager.getResponseAction(AbstractReducer.ACTION_READ_ALL),
               transactionId: transactionId,
-              data: data
+              data: data,
+              isComplete: true
             });
             this.entityDescriptor.class.onPostReadAll();
           })

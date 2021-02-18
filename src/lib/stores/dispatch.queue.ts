@@ -1,34 +1,45 @@
 import {AnyAction} from "redux";
 import {NgFluxifyModule} from "../ng-fluxify.module";
 
+type QueueItem = { action: AnyAction, promise?: Promise<void>, resolve?: () => void, reject?: (reason?: any) => void };
+
 export class DispatchQueue {
-  private queue: AnyAction[] = [];
+  private queue: QueueItem[] = [];
   private dispatchTimeout: number;
 
-  enQueue(action: AnyAction) {
-    let similar: AnyAction = null;
+  enQueue(action: AnyAction): Promise<void> {
+    let similar: QueueItem;
 
     if (action.type.endsWith('_READ_RESPONSE')) {
-      similar = this.queue.find(item => item.transactionId === action.transactionId && item.type === action.type);
-    } else if (this.queue.some(item => JSON.stringify(item) === JSON.stringify(action))) {
-      return;
+      similar = this.queue
+        .find(item => item.action.transactionId === action.transactionId && item.action.type === action.type);
+    } else if (similar = this.queue.find(item => JSON.stringify(item.action) === JSON.stringify(action))) {
+      return similar.promise;
     }
 
     if (similar) {
-      if (!Array.isArray(similar.data)) {
-        similar.data = [similar.data];
+      if (!Array.isArray(similar.action.data)) {
+        similar.action.data = [similar.action.data];
       }
 
-      if (similar.data.some(data => JSON.stringify(data) === JSON.stringify(action.data))) {
-        return;
-      }
+      const newDataArray = Array.isArray(action.data) ? action.data : [action.data];
+      newDataArray
+        .filter(newData => similar.action.data.every(data => JSON.stringify(data) !== JSON.stringify(newData)))
+        .forEach(newData => similar.action.data.push(newData));
 
-      similar.data.push(action.data);
+      return similar.promise;
     } else {
-      this.queue.push(action);
-    }
+      const newItem: QueueItem = {action};
+      newItem.promise = new Promise<void>((resolve, reject) => {
+        newItem.resolve = resolve;
+        newItem.reject = reject;
 
-    this.startDispatch();
+        this.startDispatch();
+      });
+
+      this.queue.push(newItem);
+      return newItem.promise;
+    }
   }
 
   private startDispatch() {
@@ -39,11 +50,13 @@ export class DispatchQueue {
     this.dispatchTimeout = setTimeout(() => {
       try {
         if (this.queue.length) {
-          NgFluxifyModule.ngReduxService.ngRedux.dispatch(this.queue[0]);
+          NgFluxifyModule.ngReduxService.ngRedux.dispatch(this.queue[0].action);
+          this.queue[0].resolve();
           this.queue.splice(0, 1);
         }
       } catch (e) {
         if (e.message !== 'Reducers may not dispatch actions.') {
+          this.queue[0].reject(e.message);
           this.queue.splice(0, 1);
         }
       } finally {

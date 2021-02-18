@@ -28,7 +28,6 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
 
   private state: Map<string, any>;
   protected readonly actionsManager: BaseActionsManager;
-  protected setCompleted = false;
 
   constructor(protected entityDescriptor: EntityDescriptor<T>, protected ngFluxifyConfig: NgFluxifyConfig) {
     this.actionsManager = ActionsManagerFactory.getActionsManager(entityDescriptor.name);
@@ -51,7 +50,6 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
         }
 
         state = state.set('state', action.type);
-        this.setCompleted = false;
 
         switch (action.type) {
           case this.actionsManager.getRequestAction(AbstractReducer.ACTION_CREATE):
@@ -69,7 +67,7 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
             state = this.errorTransaction(<ErrorAction>action, state);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_CREATE):
-            const entitiesCreated = this.create(action);
+            const entitiesCreated = this.create(<ResponseAction>action);
             state = this.setEntities(state, entitiesCreated);
             state = this.finishTransaction(<ResponseAction>action, state, entitiesCreated);
             break;
@@ -79,17 +77,21 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
               state = this.clearEntities(state);
             }
 
-            const entitiesRead = this.read(action);
+            const entitiesRead = this.read(<ResponseAction>action);
             state = this.setEntities(state, entitiesRead);
             state = this.finishTransaction(<ResponseAction>action, state, entitiesRead);
+
+            if ((<ResponseAction>action).isComplete) {
+              state = state.set('isComplete', true);
+            }
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_UPDATE):
-            const entitiesUpdated = this.update(action);
+            const entitiesUpdated = this.update(<ResponseAction>action);
             state = this.setEntities(state, entitiesUpdated);
             state = this.finishTransaction(<ResponseAction>action, state, entitiesUpdated);
             break;
           case this.actionsManager.getResponseAction(AbstractReducer.ACTION_DELETE):
-            const entitiesDeleted = this.delete(action);
+            const entitiesDeleted = this.delete(<ResponseAction>action);
             state = this.removeEntities(state, entitiesDeleted);
             state = this.finishTransaction(<ResponseAction>action, state, entitiesDeleted);
             break;
@@ -99,10 +101,6 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
           default:
             state = this.handleCustomActions(state, action);
             break;
-        }
-
-        if (this.setCompleted) {
-          state = state.set('isComplete', true);
         }
       }
 
@@ -114,7 +112,11 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
   }
 
   protected startTransaction(action: RequestAction, state: Map<string, any>): Map<string, any> {
-    return state.setIn(['transactions', action.transactionId], {state: TransactionState.started, action: action.type, arguments: action.arguments});
+    return state.setIn(['transactions', action.transactionId], {
+      state: TransactionState.started,
+      action: action.type,
+      arguments: action.arguments
+    });
   }
 
   protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: T | T[] | any | any[]): Map<string, any> {
@@ -127,11 +129,19 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
       entitiesId.push(isObject(entities) ? (<T>entities).primary : entities);
     }
 
-    return state.setIn(['transactions', action.transactionId], {state: TransactionState.finished, action: action.type, entities: entitiesId});
+    return state.setIn(['transactions', action.transactionId], {
+      state: TransactionState.finished,
+      action: action.type,
+      entities: entitiesId
+    });
   }
 
   protected errorTransaction(action: ErrorAction, state: Map<string, any>): Map<string, any> {
-    return state.setIn(['transactions', action.transactionId], {state: TransactionState.error, action: action.type, error: action.error});
+    return state.setIn(['transactions', action.transactionId], {
+      state: TransactionState.error,
+      action: action.type,
+      error: action.error
+    });
   }
 
   protected setEntities(state: Map<string, any>, data: T | T[]): Map<string, any> {
@@ -178,13 +188,13 @@ export abstract class AbstractReducer<T extends AbstractEntity> {
     return state;
   }
 
-  protected abstract create(action: AnyAction): T | T[];
+  protected abstract create(action: ResponseAction): T | T[];
 
-  protected abstract read(action: AnyAction): T | T[];
+  protected abstract read(action: ResponseAction): T | T[];
 
-  protected abstract update(action: AnyAction): T | T[];
+  protected abstract update(action: ResponseAction): T | T[];
 
-  protected abstract delete(action: AnyAction): any | any[];
+  protected abstract delete(action: ResponseAction): any | any[];
 
   protected initialize(state: Map<string, any>): Map<string, any> {
     return state;

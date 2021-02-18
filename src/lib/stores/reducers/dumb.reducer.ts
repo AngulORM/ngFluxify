@@ -1,8 +1,8 @@
-import {AnyAction} from 'redux';
 import {AbstractReducer} from '../abstract.reducer';
 import {AbstractEntity} from '../../domain/entities';
 import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../domain/descriptors';
 import {NgFluxifyConfig} from '../../services/ng-fluxify-config.service';
+import {ResponseAction} from "../actions";
 
 export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
   private proxyAvailables: boolean;
@@ -18,7 +18,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     }
   }
 
-  protected create(action: AnyAction): T | T[] {
+  protected create(action: ResponseAction): T | T[] {
     if (Array.isArray(action.data)) {
       return action.data.map(element => this.instanciateEntity(element));
     } else {
@@ -26,16 +26,7 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     }
   }
 
-  protected read(action: AnyAction): T | T[] {
-    if (Array.isArray(action.data)) {
-      this.setCompleted = true;
-      return action.data.map(element => this.instanciateEntity(element));
-    } else {
-      return this.instanciateEntity(action.data);
-    }
-  }
-
-  protected update(action: AnyAction): T | T[] {
+  protected read(action: ResponseAction): T | T[] {
     if (Array.isArray(action.data)) {
       return action.data.map(element => this.instanciateEntity(element));
     } else {
@@ -43,7 +34,15 @@ export class DumbReducer<T extends AbstractEntity> extends AbstractReducer<T> {
     }
   }
 
-  protected delete(action: AnyAction): any | any[] {
+  protected update(action: ResponseAction): T | T[] {
+    if (Array.isArray(action.data)) {
+      return action.data.map(element => this.instanciateEntity(element));
+    } else {
+      return this.instanciateEntity(action.data);
+    }
+  }
+
+  protected delete(action: ResponseAction): any | any[] {
     return action.data;
   }
 
