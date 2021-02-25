@@ -12,6 +12,7 @@ import {NgFluxifyModule} from "../ng-fluxify.module";
  */
 export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor: T): PropertyDecorator {
   return function (target: any, propName: string) {
+    const obs$ = new Map<any, Observable<any>>();
     const getter = function () {
       const foreignKeyValue = (entity: AbstractEntity) => entity[associationDescriptor.foreignKey];
 
@@ -30,15 +31,21 @@ export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor
         associationDescriptor.entity = (associationDescriptor.entity as (() => Type<AbstractEntity>))();
       }
 
-      return (this.primary ? this.read() : of(this))
-        .pipe(filter(val => !!val))
-        .pipe(map(foreignKeyValue))
-        .pipe(filter(foreignKey => !!foreignKey))
-        .pipe(switchMap((foreignKey: any): Observable<AbstractEntity> => {
-          // @ts-ignore
-          return associationDescriptor.entity.read(foreignKey);
-        }))
-        .pipe(filter(element => !!element));
+      if (!this.primary || !obs$.has(this.primary)) {
+        obs$.set(
+          this.primary,
+          (this.primary ? this.read() : of(this))
+            .pipe(filter(val => !!val))
+            .pipe(map(foreignKeyValue))
+            .pipe(filter(foreignKey => !!foreignKey))
+            .pipe(switchMap((foreignKey: any): Observable<any> => {
+              // @ts-ignore
+              return associationDescriptor.entity.read(foreignKey);
+            }))
+        );
+      }
+
+      return obs$.get(this.primary);
     };
 
     if (Reflect.deleteProperty(target, propName)) {
