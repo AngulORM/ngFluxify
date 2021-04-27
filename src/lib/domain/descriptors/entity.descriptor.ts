@@ -1,9 +1,10 @@
-import {Type} from '@angular/core';
+import {ForwardRefFn, Type} from '@angular/core';
 import {AbstractEntity} from '../entities';
 import {IEntityService} from '../../services/IEntity.service';
+import {AbstractReducer} from "../../stores";
 
 export abstract class EntityDescriptor<T extends AbstractEntity> {
-  abstract readonly reducerType: any;
+  abstract readonly reducerType: Type<AbstractReducer<T>> | ((forwardRefFn: ForwardRefFn) => Type<AbstractReducer<T>>);
   abstract readonly serviceType: Type<IEntityService<T>>;
   abstract readonly serviceDeps: any[];
   class?: Type<T> | any;

@@ -2,10 +2,11 @@ import {EntityDescriptor} from '../domain/descriptors';
 import {EntityManager} from '../domain/api';
 import {AbstractEntity} from '../domain/entities';
 import {NgFluxifyModule} from '../ng-fluxify.module';
-import {InjectionToken, Injector} from '@angular/core';
+import {InjectionToken, Injector, resolveForwardRef, Type} from '@angular/core';
 import {NgRedux} from '@angular-redux/store';
 import {IEntityService} from '../services/IEntity.service';
 import {NgReduxService} from '../services/ng-redux.service';
+import {AbstractReducer} from "../stores";
 
 export function Entity<T extends EntityDescriptor<K>, K extends AbstractEntity>(entityDescriptor: T) {
   return function (target) {

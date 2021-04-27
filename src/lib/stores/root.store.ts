@@ -3,6 +3,7 @@ import {EntityDescriptor} from '../domain/descriptors';
 import {AbstractReducer} from './abstract.reducer';
 import {AbstractEntity} from '../domain/entities';
 import {NgFluxifyConfig} from '../services/ng-fluxify-config.service';
+import {resolveForwardRef, Type} from "@angular/core";
 
 export interface IAppState {
   [key: string]: any;
@@ -25,7 +26,10 @@ export class RootReducer {
   }
 
   public static initEntityReducer(entityDescriptor: EntityDescriptor<AbstractEntity>, ngFluxifyConfig: NgFluxifyConfig): Reducer {
-    const reducer: AbstractReducer<typeof entityDescriptor.class> = new entityDescriptor.reducerType(entityDescriptor, ngFluxifyConfig);
+    // @ts-ignore
+    const reducerType: Type<AbstractReducer<typeof entityDescriptor.class>> = resolveForwardRef(entityDescriptor.reducerType);
+
+    const reducer: AbstractReducer<typeof entityDescriptor.class> = new reducerType(entityDescriptor, ngFluxifyConfig);
     return reducer.createReducer();
   }
 
