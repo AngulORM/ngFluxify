@@ -11,9 +11,4 @@ export interface NgFluxifyConfig {
    * Enhance store writing performance by temporary disabling immutability
    */
   enableDynamicStateMutability?: boolean;
-
-  /**
-   * When enabled, parse entities on the fly
-   */
-  enableJITEntityParsing?: boolean;
 }

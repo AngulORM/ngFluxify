@@ -4,20 +4,26 @@ import {debounce, filter, map, switchMap} from "rxjs/operators";
 import {NgFluxifyModule} from "../ng-fluxify.module";
 import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
 import {AbstractReducer, ActionsManagerFactory} from "../stores";
-import {EntityModel} from "./entity.decorator";
+import {EntityData, EntityModel} from "./entity.decorator";
 
 /**
  * @Preview
  * @Experimental
  */
 export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
+  propertyDescriptor.parsingStrategy = ParsingStrategy.IGNORE_SET_TO_DATASOURCE;
+
   return function (target: any, propName: string) {
-    const obs$ = new Map<any, Observable<any>>();
+    if (!target.constructor["_model"]) {
+      target.constructor["_model"] = EntityModel.getModel(target.constructor);
+    }
+    if (!target["_data"]) {
+      target["_data"] = target["_model"].instanciateData();
+    }
 
-    propertyDescriptor.parsingStrategy = ParsingStrategy.IGNORE_SET_TO_DATASOURCE;
+    const entityModel: EntityModel<any> = target.constructor["_model"];
+    const entityData: EntityData<any> = target["_data"];
 
-    const entityModel = EntityModel.getModel(target.constructor);
-    const entityData = entityModel.data(target);
     entityModel.addProperty(propName, propertyDescriptor);
 
     let externalClass: Type<any>;
@@ -55,7 +61,7 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
           .pipe(filter(val => !!val))
           .pipe(debounce(val => val[`_${propName}_promise`] || interval(0)))
           .pipe(map(val => val[`_${propName}`]))
-          .pipe(switchMap((foreignKey: any | any[]): Observable<AbstractEntity | AbstractEntity[]> => {
+          .pipe(switchMap((foreignKey: any | any[]): Observable<any | any[]> => {
             if (Array.isArray(foreignKey)) {
               if (foreignKey.length === 0) {
                 return of([]);
@@ -63,23 +69,15 @@ export function ExternalEntity<T extends PropertyDescriptor>(propertyDescriptor:
 
               return combineLatest(
                 foreignKey.map(key => {
-                  if (!obs$.has(key)) {
-                    // @ts-ignore
-                    obs$.set(key, externalClass.read(key));
-                  }
-
-                  return obs$.get(key);
+                  // @ts-ignore
+                  return externalClass.read(key);
                 })
               );
             } else if (!foreignKey) {
               return of(null);
             } else {
-              if (!obs$.has(foreignKey)) {
-                // @ts-ignore
-                obs$.set(foreignKey, externalClass.read(foreignKey));
-              }
-
-              return obs$.get(foreignKey);
+              // @ts-ignore
+              return externalClass.read(foreignKey);
             }
           })
         );

@@ -1,11 +1,11 @@
 import {HttpClient} from '@angular/common/http';
 import {Injectable} from "@angular/core";
 import {IDataService} from '../interfaces';
-import {RestEntityDescriptor} from '../../descriptors';
-import {EntityModel} from "../../decorators";
+import {ParsingStrategy, PropertyDescriptor, RestEntityDescriptor} from '../../descriptors';
+import {EntityData, EntityModel} from "../../decorators";
 
 @Injectable()
-export class RestService<T> implements IDataService<T> {
+export class RestService<T extends Object> implements IDataService<T> {
   constructor(protected entityDescriptor: RestEntityDescriptor<T>, protected httpClient: HttpClient) {
 
   }
@@ -18,12 +18,12 @@ export class RestService<T> implements IDataService<T> {
     return this.httpClient.get(this.entityDescriptor.route).toPromise();
   }
 
-  public async create(entity: T) {
-    return this.httpClient.post(this.entityDescriptor.route, this.entityModel.data(entity).sanitized).toPromise();
+  public async create(entity: EntityData<T>) {
+    return this.httpClient.post(this.entityDescriptor.route, this.sanitize(entity)).toPromise();
   }
 
-  public async update(entity: T) {
-    return this.httpClient.put(`${this.entityDescriptor.route}/${this.entityModel.primary(entity)}`, this.entityModel.data(entity).sanitized).toPromise();
+  public async update(entity: EntityData<T>) {
+    return this.httpClient.put(`${this.entityDescriptor.route}/${entity.primary}`, this.sanitize(entity)).toPromise();
   }
 
   public async delete(id: any): Promise<any> {
@@ -32,5 +32,18 @@ export class RestService<T> implements IDataService<T> {
 
   protected get entityModel(): EntityModel<T> {
     return EntityModel.getModel<T>(this.entityDescriptor.class);
+  }
+
+  protected sanitize(data: EntityData<T>): any {
+    const sanitized = {};
+    this.entityModel.properties.forEach((value: PropertyDescriptor, key: string) => {
+      if (value.parsingStrategy === ParsingStrategy.IGNORE_DATASOURCE || value.parsingStrategy === ParsingStrategy.IGNORE_SET_TO_DATASOURCE) {
+        return;
+      }
+
+      sanitized[value.label ? value.label : key] = data[key]
+    });
+
+    return sanitized;
   }
 }

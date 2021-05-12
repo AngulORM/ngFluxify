@@ -1,23 +1,10 @@
 import {AbstractReducer} from '../abstract.reducer';
-import {EntityDescriptor, ParsingStrategy, PropertyDescriptor} from '../../descriptors';
-import {NgFluxifyConfig} from "../../services";
+import {ParsingStrategy, PropertyDescriptor} from '../../descriptors';
 import {ResponseAction} from "../actions";
+import {EntityData, EntityType, getModel} from "../../decorators";
 
 export class DumbReducer<T extends Object> extends AbstractReducer<T> {
-  private proxyAvailables: boolean;
-
-  constructor(entityDescriptor: EntityDescriptor<T>, ngFluxifyConfig: NgFluxifyConfig) {
-    super(entityDescriptor, ngFluxifyConfig);
-
-    try {
-      const proxyTest = new Proxy({}, {});
-      this.proxyAvailables = (proxyTest instanceof Object);
-    } catch (_) {
-      this.proxyAvailables = false;
-    }
-  }
-
-  protected create(action: ResponseAction): T | T[] {
+  protected create(action: ResponseAction): EntityData<T> | EntityData<T>[] {
     if (Array.isArray(action.data)) {
       return action.data.map(element => this.instanciateEntity(element));
     } else {
@@ -25,7 +12,7 @@ export class DumbReducer<T extends Object> extends AbstractReducer<T> {
     }
   }
 
-  protected read(action: ResponseAction): T | T[] {
+  protected read(action: ResponseAction): EntityData<T> | EntityData<T>[] {
     if (Array.isArray(action.data)) {
       return action.data.map(element => this.instanciateEntity(element));
     } else {
@@ -33,7 +20,7 @@ export class DumbReducer<T extends Object> extends AbstractReducer<T> {
     }
   }
 
-  protected update(action: ResponseAction): T | T[] {
+  protected update(action: ResponseAction): EntityData<T> | EntityData<T>[] {
     if (Array.isArray(action.data)) {
       return action.data.map(element => this.instanciateEntity(element));
     } else {
@@ -45,52 +32,19 @@ export class DumbReducer<T extends Object> extends AbstractReducer<T> {
     return action.data;
   }
 
-  private instanciateEntity(jsonObject: any): T {
+  private instanciateEntity(jsonObject: any): EntityData<T> {
     if (!jsonObject) {
       return null;
     }
 
-    const entity: T = new this.entityDescriptor.class();
-
-    if (this.proxyAvailables && this.ngFluxifyConfig.enableJITEntityParsing) {
-      const primaryKey: [string, PropertyDescriptor][] = this.entityDescriptor.class.primaryKey;
-      primaryKey.forEach(key => {
-        this.parseProperty(entity, jsonObject, key[1], key[0]);
-      });
-
-      let isParsed: boolean;
-      const handler = {
-        get: (target: T, key: PropertyKey) => {
-          if (!isParsed && primaryKey.every(pKey => pKey[0] !== key)) {
-            this.parse(entity, jsonObject);
-            isParsed = true;
-          }
-
-          return target[key];
-        },
-        set: (target: T, p: PropertyKey, value: any): boolean => {
-          if (!isParsed) {
-            this.parse(entity, jsonObject);
-            isParsed = true;
-          }
-
-          try {
-            target[p] = value;
-            return true;
-          } catch {
-            return false;
-          }
-        }
-      };
-      return new Proxy(entity, handler);
-    }
+    const entity: EntityType<T> = new this.entityDescriptor.class();
 
     this.parse(entity, jsonObject);
-    return entity;
+    return entity._entityData;
   }
 
   private parse(entity: T, jsonObject: any) {
-    const properties: Map<string, PropertyDescriptor> = this.entityDescriptor.class.properties;
+    const properties: Map<string, PropertyDescriptor> = getModel(this.entityDescriptor.class).properties;
 
     properties.forEach((value, key) => {
       this.parseProperty(entity, jsonObject, value, key);

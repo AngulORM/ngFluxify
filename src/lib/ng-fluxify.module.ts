@@ -1,7 +1,7 @@
 import {Injector, ModuleWithProviders, NgModule} from '@angular/core';
 import {NgReduxModule} from '@angular-redux/store';
 
-import {NgReduxService, NgFluxifyConfig, NgFluxifyConfigService} from './services';
+import {NgFluxifyConfig, NgFluxifyConfigService, NgReduxService} from './services';
 import {DispatchQueue} from "./stores";
 
 // @dynamic

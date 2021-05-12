@@ -1,5 +1,6 @@
 import {ParsingStrategy, PropertyDescriptor} from '../descriptors';
-import {EntityModel} from "./entity.decorator";
+import {EntityData, EntityModel, EntityType, getData, getModel} from "./entity.decorator";
+import {Type} from "@angular/core";
 
 const types = new Map<any, boolean>();
 
@@ -21,24 +22,25 @@ function createNonPrimitive(val: any, propertyDescriptor: PropertyDescriptor): a
 }
 
 export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor: T): PropertyDecorator {
-  return function (target: any, propName: string) {
-    if (!propertyDescriptor.parsingStrategy) {
-      propertyDescriptor.parsingStrategy = ParsingStrategy.DEFAULT;
-    }
+  if (!propertyDescriptor.parsingStrategy) {
+    propertyDescriptor.parsingStrategy = ParsingStrategy.DEFAULT;
+  }
 
-    if (!types.has(propertyDescriptor.type)) {
-      let isPrimitive = true;
-      try {
-        propertyDescriptor.type.prototype.valueOf();
-      } catch {
-        isPrimitive = false;
-      } finally {
-        types.set(propertyDescriptor.type, isPrimitive);
-      }
+  if (!types.has(propertyDescriptor.type)) {
+    let isPrimitive = true;
+    try {
+      propertyDescriptor.type.prototype.valueOf();
+    } catch {
+      isPrimitive = false;
+    } finally {
+      types.set(propertyDescriptor.type, isPrimitive);
     }
+  }
 
-    const entityModel = EntityModel.getModel(target.constructor);
-    const entityData = entityModel.data(target);
+  return function <T extends EntityType<Object>>(target: T, propName: string) {
+    const entityModel = getModel(target);
+    const entityData = getData(target);
+
     entityModel.addProperty(propName, propertyDescriptor);
 
     const value = target[propName];
@@ -53,7 +55,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
       });
 
       const getter = function () {
-        return entityData[propName];
+        return getData(this)[propName];
       };
 
       const create = types.get(propertyDescriptor.type) ? createPrimitive : createNonPrimitive;
@@ -71,7 +73,7 @@ export function EntityProperty<T extends PropertyDescriptor>(propertyDescriptor:
           }
         }
 
-        entityData[propName] = newVal;
+        getData(this)[propName] = newVal;
       };
 
       Reflect.defineProperty(target, propName, {

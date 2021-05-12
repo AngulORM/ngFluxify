@@ -1,18 +1,18 @@
 import {Map} from 'immutable';
 import {AnyAction, Reducer} from 'redux';
+import {isObject} from 'rxjs/internal-compatibility';
 
 import {BaseActionsManager} from './base.action';
 import {ActionsManagerFactory} from './action.factory';
 import {ErrorAction, RequestAction, ResponseAction} from './actions';
-import {TransactionModel} from '../models/transaction.model'; // Do not change, solve circular dependencies
-import {isObject} from 'rxjs/internal-compatibility';
+import {TransactionModel} from '../models';
 import {EntityDescriptor} from '../descriptors';
 import {NgFluxifyConfig} from "../services";
-import {EntityModel} from "../decorators";
+import {EntityData} from "../decorators";
 
 const INITIAL_STATE: Map<string, any> = Map({
   state: '',
-  entities: Map<any, any>(),
+  entities: Map<any, Record<string, any>>(),
   isComplete: false,
   transactions: Map<number, TransactionModel>()
 });
@@ -42,7 +42,7 @@ export abstract class AbstractReducer<T extends Object> {
     this.state = this.initialize(INITIAL_STATE);
   }
 
-  public createReducer(): Reducer<any> {
+  public createReducer(): Reducer<Map<string, any>> {
     return (state: Map<string, any> = this.state, action: AnyAction): Map<string, any> => {
       if ((<string>action.type).match(this.actionsManager.getActionScheme())) {
         if (this.ngFluxifyConfig.enableDynamicStateMutability) {
@@ -119,14 +119,14 @@ export abstract class AbstractReducer<T extends Object> {
     });
   }
 
-  protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: T | T[] | any | any[]): Map<string, any> {
+  protected finishTransaction(action: ResponseAction, state: Map<string, any>, entities: EntityData<T> | EntityData<T>[] | any | any[]): Map<string, any> {
     const entitiesId = [];
     if (Array.isArray(entities)) {
       for (const entity of entities) {
-        entitiesId.push(isObject(entity) ? this.entityModel.primary(entity) : entity);
+        entitiesId.push(isObject(entity) ? entity.primary : entity);
       }
     } else {
-      entitiesId.push(isObject(entities) ? this.entityModel.primary(entities) : entities);
+      entitiesId.push(isObject(entities) ? entities.primary : entities);
     }
 
     return state.setIn(['transactions', action.transactionId], {
@@ -144,9 +144,9 @@ export abstract class AbstractReducer<T extends Object> {
     });
   }
 
-  protected setEntities(state: Map<string, any>, data: T | T[]): Map<string, any> {
+  protected setEntities(state: Map<string, any>, data: EntityData<T> | EntityData<T>[]): Map<string, any> {
     if (Array.isArray(data)) {
-      data.forEach((entity: T): void => {
+      data.forEach((entity: EntityData<T>): void => {
         state = this.setEntity(state, entity);
       });
     } else {
@@ -156,12 +156,12 @@ export abstract class AbstractReducer<T extends Object> {
     return state;
   }
 
-  protected setEntity(state: Map<string, any>, entity: T): Map<string, any> {
+  protected setEntity(state: Map<string, any>, entity: EntityData<T>): Map<string, any> {
     if (!entity) {
       return state;
     }
 
-    return state.setIn(['entities', this.entityModel.primary(entity)], entity);
+    return state.setIn(['entities', entity.primary], Object.seal(entity));
   }
 
   protected removeEntities(state: Map<string, any>, ids: any | any[]): Map<string, any> {
@@ -188,15 +188,11 @@ export abstract class AbstractReducer<T extends Object> {
     return state;
   }
 
-  protected get entityModel(): EntityModel<T> {
-    return EntityModel.getModel(this.entityDescriptor.class);
-  }
+  protected abstract create(action: ResponseAction): EntityData<T> | EntityData<T>[];
 
-  protected abstract create(action: ResponseAction): T | T[];
+  protected abstract read(action: ResponseAction): EntityData<T> | EntityData<T>[];
 
-  protected abstract read(action: ResponseAction): T | T[];
-
-  protected abstract update(action: ResponseAction): T | T[];
+  protected abstract update(action: ResponseAction): EntityData<T> | EntityData<T>[];
 
   protected abstract delete(action: ResponseAction): any | any[];
 
