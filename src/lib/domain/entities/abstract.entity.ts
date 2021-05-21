@@ -134,4 +134,4 @@ export abstract class AbstractEntity {
   }
 }
 
-export const trackByPrimary = (_, item: AbstractEntity) => item ? item.primary : null;
+export const trackByPrimary = <T extends AbstractEntity>(_, item: T) => item ? item.primary : null;
