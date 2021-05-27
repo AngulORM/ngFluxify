@@ -1,5 +1,5 @@
 import {filter, map, switchMap} from 'rxjs/operators';
-import {Observable, of} from "rxjs";
+import {Observable, of, ReplaySubject} from "rxjs";
 import {Type} from "@angular/core";
 
 import {AssociationDescriptor} from '../domain/descriptors';
@@ -31,18 +31,20 @@ export function ManyToOne<T extends AssociationDescriptor>(associationDescriptor
         associationDescriptor.entity = (associationDescriptor.entity as (() => Type<AbstractEntity>))();
       }
 
-      if (!this.primary || !obs$.has(this.primary)) {
-        obs$.set(
-          this.primary,
-          (this.primary ? this.read() : of(this))
-            .pipe(filter(val => !!val))
-            .pipe(map(foreignKeyValue))
-            .pipe(filter(foreignKey => !!foreignKey))
-            .pipe(switchMap((foreignKey: any): Observable<any> => {
-              // @ts-ignore
-              return associationDescriptor.entity.read(foreignKey);
-            }))
-        );
+      if (this.primary === null || this.primary === undefined || !obs$.has(this.primary)) {
+        const subject = new ReplaySubject(1);
+
+        (this.primary !== null && this.primary !== undefined ? this.read() : of(this)).pipe(
+          filter(val => !!val),
+          map(foreignKeyValue),
+          filter(foreignKey => foreignKey !== null && foreignKey !== undefined),
+          switchMap((foreignKey: any): Observable<any> => {
+            // @ts-ignore
+            return associationDescriptor.entity.read(foreignKey);
+          })
+        ).subscribe(subject);
+
+        obs$.set(this.primary, subject.asObservable());
       }
 
       return obs$.get(this.primary);

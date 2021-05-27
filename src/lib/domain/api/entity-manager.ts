@@ -67,7 +67,7 @@ export class EntityManager<T extends AbstractEntity> {
    * @throws Error
    */
   getById(id: any): Observable<T> {
-    if (id === null) {
+    if (id === null || id === undefined) {
       throw new Error(`${this.entityDescriptor.class.name.toString()}/GetById: Wrong entity id: ${id}`);
     }
 
